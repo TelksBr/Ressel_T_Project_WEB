@@ -21,31 +21,33 @@ export function Hero() {
             <button 
               onClick={scrollToPlans}
               className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-8 py-3 rounded-lg hover:from-purple-700 hover:to-purple-800 transition transform hover:scale-105 flex items-center justify-center"
+              aria-label="Ver planos disponíveis"
             >
-              Começar Agora <ChevronRight className="ml-2 h-5 w-5" />
+              Começar Agora <ChevronRight className="ml-2 h-5 w-5" aria-hidden="true" />
             </button>
             <a 
               href="https://play.google.com/store/apps/details?id=app.reselltproject" 
               target="_blank" 
               rel="noopener noreferrer"
               className="border border-purple-500 text-white px-8 py-3 rounded-lg hover:bg-purple-900/50 transition transform hover:scale-105 flex items-center justify-center"
+              aria-label="Baixar aplicativo na Play Store"
             >
-              <PlayCircle className="mr-2 h-5 w-5" />
+              <PlayCircle className="mr-2 h-5 w-5" aria-hidden="true" />
               Download App
             </a>
           </div>
         </div>
-        <div className="relative mt-8 lg:mt-0">
+        <div className="relative mt-8 lg:mt-0" aria-hidden="true">
           <div className="bg-gradient-to-br from-purple-900/40 to-purple-800/40 p-6 sm:p-8 rounded-2xl border border-purple-700/50 backdrop-blur-sm">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="bg-purple-800/50 p-6 rounded-xl transform hover:scale-105 transition">
                 <Shield className="h-12 w-12 text-purple-400 mb-4" />
-                <h3 className="text-white font-bold mb-2">Sempre Atualizado</h3>
+                <h2 className="text-white font-bold mb-2">Sempre Atualizado</h2>
                 <p className="text-gray-300 text-sm">Estamos sempre trabalhando para incluir os métodos mais recentes!</p>
               </div>
               <div className="bg-purple-800/50 p-6 rounded-xl transform hover:scale-105 transition">
                 <Lock className="h-12 w-12 text-purple-400 mb-4" />
-                <h3 className="text-white font-bold mb-2">Privacidade</h3>
+                <h2 className="text-white font-bold mb-2">Privacidade</h2>
                 <p className="text-gray-300 text-sm">Navegação anônima garantida</p>
               </div>
             </div>
