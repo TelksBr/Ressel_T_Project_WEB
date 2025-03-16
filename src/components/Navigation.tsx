@@ -16,7 +16,7 @@ export function Navigation() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Shield className="h-8 w-8 text-purple-500" />
-            <span className="text-xl font-bold text-white">Ressel T Project</span>
+            <span className="text-xl font-bold text-white">Resell T Project</span>
           </div>
 
           {/* Mobile menu button */}
