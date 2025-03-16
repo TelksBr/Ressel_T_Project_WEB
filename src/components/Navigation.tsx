@@ -35,6 +35,12 @@ export function Navigation() {
             >
               Começar Agora
             </button>
+            <a 
+              href="https://painel.reselltproject.store"
+              className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition transform hover:scale-105"
+            >
+              Painel de Login
+            </a>
           </div>
         </div>
 
@@ -47,6 +53,12 @@ export function Navigation() {
             >
               Começar Agora
             </button>
+            <a 
+              href="https://painel.reselltproject.store"
+              className="block w-full mt-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition text-center"
+            >
+              Painel de Login
+            </a>
           </div>
         )}
       </div>
