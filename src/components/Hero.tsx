@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, PlayCircle, DollarSign, Shield, Lock } from 'lucide-react';
+import { ChevronRight, PlayCircle, DollarSign, Shield, Lock, LogIn } from 'lucide-react';
 
 export function Hero() {
   const scrollToPlans = () => {
@@ -34,6 +34,14 @@ export function Hero() {
             >
               <PlayCircle className="mr-2 h-5 w-5" aria-hidden="true" />
               Download App
+            </a>
+            <a 
+              href="painel.reselltproject.store" 
+              className="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition transform hover:scale-105 flex items-center justify-center"
+              aria-label="Ir para o painel de login"
+            >
+              <LogIn className="mr-2 h-5 w-5" aria-hidden="true" />
+              Login
             </a>
           </div>
         </div>
