@@ -35,6 +35,13 @@ export function Hero() {
               <PlayCircle className="mr-2 h-5 w-5" aria-hidden="true" />
               Download App
             </a>
+            <a 
+              href="painel.reselltproject.store" 
+              className="bg-purple-500 text-white px-8 py-3 rounded-lg hover:bg-purple-600 transition transform hover:scale-105 flex items-center justify-center"
+              aria-label="Ir para o painel de login"
+            >
+              Login
+            </a>
           </div>
         </div>
         <div className="relative mt-8 lg:mt-0" aria-hidden="true">
