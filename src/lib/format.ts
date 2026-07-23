@@ -6,6 +6,7 @@ export function formatCurrency(value: number): string {
 }
 
 export function formatCpf(value: string): string {
+  if (!value) return '';
   const digits = value.replace(/\D/g, '').slice(0, 11);
   return digits
     .replace(/(\d{3})(\d)/, '$1.$2')
@@ -14,6 +15,7 @@ export function formatCpf(value: string): string {
 }
 
 export function formatPhone(value: string): string {
+  if (!value) return '';
   const digits = value.replace(/\D/g, '').slice(0, 13);
   if (digits.length <= 2) return digits;
   if (digits.length <= 4) return `+${digits.slice(0, 2)} (${digits.slice(2)}`;
@@ -22,6 +24,7 @@ export function formatPhone(value: string): string {
 }
 
 export function stripDigits(value: string): string {
+  if (!value) return '';
   return value.replace(/\D/g, '');
 }
 
@@ -42,17 +45,27 @@ export function isValidCpf(cpf: string): boolean {
   return check === Number(digits[10]);
 }
 
-export function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+export function isValidEmail(email: string | null | undefined): boolean {
+  if (!email || typeof email !== 'string') return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
-export function isTrustedEmailDomain(email: string, trustedDomains: string[]): boolean {
-  const domain = email.split('@')[1]?.toLowerCase();
-  if (!domain || trustedDomains.length === 0) return isValidEmail(email);
+export function isTrustedEmailDomain(
+  email: string | null | undefined,
+  trustedDomains: string[]
+): boolean {
+  if (!email || typeof email !== 'string') return false;
+  const trimmed = email.trim();
+  const domain = trimmed.split('@')[1]?.toLowerCase();
+  if (!domain) return false;
+  if (trustedDomains.length === 0) return isValidEmail(trimmed);
 
-  return trustedDomains.some(
-    (trusted) => domain === trusted.toLowerCase() || domain.endsWith(`.${trusted.toLowerCase()}`)
-  );
+  return trustedDomains
+    .filter((trusted): trusted is string => Boolean(trusted))
+    .some(
+      (trusted) =>
+        domain === trusted.toLowerCase() || domain.endsWith(`.${trusted.toLowerCase()}`)
+    );
 }
 
 export function paymentMethodLabel(type: string): string {

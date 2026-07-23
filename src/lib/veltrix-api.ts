@@ -68,8 +68,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const message =
       errorData?.message ||
       errorData?.error ||
+      (text && !text.startsWith('<') ? text : null) ||
       `Erro na API (${response.status})`;
     throw new VeltrixApiError(message, response.status, errorData ?? undefined);
+  }
+
+  if (data === null && text && !text.startsWith('<')) {
+    throw new VeltrixApiError('Resposta inválida da API.', response.status);
   }
 
   return (data ?? ({} as T)) as T;
@@ -93,7 +98,9 @@ function normalizeTestConfig(data: unknown): TestConfig {
     cooldown_hours: Number(raw.cooldown_hours ?? 0),
     include_v2ray: Boolean(raw.include_v2ray),
     trusted_email_domains: Array.isArray(raw.trusted_email_domains)
-      ? (raw.trusted_email_domains as string[])
+      ? (raw.trusted_email_domains as unknown[]).filter(
+          (d): d is string => typeof d === 'string' && d.length > 0
+        )
       : [],
     seller: raw.seller as TestConfig['seller'],
   };
@@ -250,8 +257,8 @@ export const veltrixApi = {
     });
 
     return {
-      success: data.success ?? true,
-      message: data.message ?? 'Teste criado! Verifique sua caixa de entrada.',
+      success: data?.success ?? true,
+      message: data?.message ?? 'Teste criado! Verifique sua caixa de entrada.',
     };
   },
 };

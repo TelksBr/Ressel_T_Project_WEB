@@ -178,7 +178,7 @@ export function Plans() {
           </div>
 
           <ul className="mt-8 flex flex-col items-center gap-2 px-4 text-center text-xs text-gray-500 sm:mt-10 sm:hidden">
-            {activeConfig.footnote.split(' · ').map((item) => (
+            {(activeConfig.footnote ?? '').split(' · ').filter(Boolean).map((item) => (
               <li key={item} className="flex items-center gap-2">
                 <Check className="h-3.5 w-3.5 shrink-0 text-brand-400" />
                 {item}
@@ -186,7 +186,7 @@ export function Plans() {
             ))}
           </ul>
           <div className="mt-8 hidden flex-wrap items-center justify-center gap-x-6 gap-y-2 px-4 text-center text-sm text-gray-500 sm:mt-10 sm:flex">
-            {activeConfig.footnote.split(' · ').map((item) => (
+            {(activeConfig.footnote ?? '').split(' · ').filter(Boolean).map((item) => (
               <span key={item} className="flex items-center gap-2">
                 <Check className="h-3.5 w-3.5 shrink-0 text-brand-400" />
                 {item}
