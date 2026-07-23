@@ -1,64 +1,68 @@
-import React, { useState } from 'react';
-import { Shield, Menu, X } from 'lucide-react';
+import { useState } from 'react';
+import { Shield, Menu, X, Sparkles } from 'lucide-react';
 
 export function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const scrollToPlans = () => {
-    const plansSection = document.getElementById('planos');
-    plansSection?.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('planos')?.scrollIntoView({ behavior: 'smooth' });
     setIsMenuOpen(false);
   };
 
   return (
-    <nav className="sticky top-0 z-50 backdrop-blur-lg bg-purple-900/80 border-b border-purple-800/50">
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Shield className="h-8 w-8 text-purple-500" />
-            <span className="text-xl font-bold text-white">Resell T Project</span>
-          </div>
+    <nav className="sticky top-0 z-50 border-b border-white/[0.06] bg-surface/70 backdrop-blur-2xl">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="flex h-14 items-center justify-between sm:h-[72px]">
+          <a href="#" className="group flex min-w-0 items-center gap-2 sm:gap-3">
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-brand-500/30 bg-gradient-to-br from-brand-600/30 to-brand-800/20 shadow-glow-sm transition group-hover:shadow-glow sm:h-10 sm:w-10">
+              <Shield className="h-4 w-4 text-brand-300 sm:h-5 sm:w-5" />
+            </div>
+            <div className="min-w-0 flex flex-col">
+              <span className="truncate font-display text-base font-bold leading-tight text-white sm:text-lg">
+                Resell T Project
+              </span>
+              <span className="hidden text-[10px] font-medium uppercase tracking-[0.2em] text-brand-400/80 sm:block">
+                Premium VPN
+              </span>
+            </div>
+          </a>
 
-          {/* Mobile menu button */}
-          <button 
+          <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden text-white hover:text-purple-400 transition"
+            className="rounded-lg p-2 text-gray-300 transition hover:bg-white/5 hover:text-white md:hidden"
+            aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
           >
             {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
 
-          {/* Desktop menu */}
-          <div className="hidden md:flex items-center space-x-8">
-            <button 
-              onClick={scrollToPlans}
-              className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition transform hover:scale-105"
-            >
+          <div className="hidden items-center gap-3 md:flex">
+            <button onClick={scrollToPlans} className="btn-primary px-5 py-2.5 text-sm">
+              <Sparkles className="h-4 w-4" />
               Começar Agora
             </button>
-            <a 
+            <a
               href="https://painel.reselltproject.store"
-              className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition transform hover:scale-105"
+              className="btn-secondary px-5 py-2.5 text-sm"
             >
               Painel de Login
             </a>
           </div>
         </div>
 
-        {/* Mobile menu */}
         {isMenuOpen && (
-          <div className="md:hidden mt-4 pb-4">
-            <button 
-              onClick={scrollToPlans}
-              className="block w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition text-center"
-            >
-              Começar Agora
-            </button>
-            <a 
-              href="https://painel.reselltproject.store"
-              className="block w-full mt-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition text-center"
-            >
-              Painel de Login
-            </a>
+          <div className="border-t border-white/[0.06] pb-4 pt-3 md:hidden">
+            <div className="flex flex-col gap-2">
+              <button onClick={scrollToPlans} className="btn-primary w-full py-3 text-sm">
+                <Sparkles className="h-4 w-4" />
+                Começar Agora
+              </button>
+              <a
+                href="https://painel.reselltproject.store"
+                className="btn-secondary w-full py-3 text-center text-sm"
+              >
+                Painel de Login
+              </a>
+            </div>
           </div>
         )}
       </div>
