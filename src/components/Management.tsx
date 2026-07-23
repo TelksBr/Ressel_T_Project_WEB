@@ -1,4 +1,5 @@
 import { Globe, Info, Send, Layers, ExternalLink } from 'lucide-react';
+import { veltrixConfig } from '../lib/config';
 
 const TELEGRAM_BOT_URL = 'https://t.me/ssh_t_project_vip_bot';
 
@@ -23,7 +24,7 @@ const channels = [
     accent: 'from-brand-500/20 to-brand-700/5',
     iconColor: 'text-brand-400',
     borderColor: 'hover:border-brand-500/30',
-    href: 'https://painel.reselltproject.shop',
+    href: veltrixConfig.panelUrl,
     cta: 'Acessar Painel',
   },
 ];

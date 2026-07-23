@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Shield, Menu, X, Sparkles } from 'lucide-react';
 import { scrollToSection } from '../lib/scroll';
+import { veltrixConfig } from '../lib/config';
 
 const navLinks = [
   { id: 'planos', label: 'Planos' },
@@ -67,7 +68,7 @@ export function Navigation() {
               Começar Agora
             </button>
             <a
-              href="https://painel.reselltproject.shop"
+              href={veltrixConfig.panelUrl}
               className="btn-secondary px-5 py-2.5 text-sm"
             >
               Painel de Login
@@ -94,7 +95,7 @@ export function Navigation() {
                 Começar Agora
               </button>
               <a
-                href="https://painel.reselltproject.shop"
+                href={veltrixConfig.panelUrl}
                 className="btn-secondary w-full py-3 text-center text-sm"
               >
                 Painel de Login

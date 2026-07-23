@@ -1,15 +1,23 @@
 /**
- * Proxy /api/* → painel Veltrix (evita CORS em produção no Cloudflare Pages).
- * Variável opcional no runtime: VELTRIX_API_ORIGIN
+ * Proxy /api/* → painel.{mesmo-dominio} (evita CORS no Cloudflare Pages).
  */
+function panelOriginFromRequest(url) {
+  const hostname = url.hostname.replace(/^www\./, '');
+
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'https://painel.reselltproject.shop';
+  }
+
+  const root = hostname.startsWith('painel.') ? hostname.slice('painel.'.length) : hostname;
+  return `${url.protocol}//painel.${root}`;
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
-
-  // Extrai path da URL diretamente (mais confiável que params.path no CF Pages)
   const apiPath = url.pathname.replace(/^\/api\/?/, '');
 
-  const origin = env.VELTRIX_API_ORIGIN || 'https://painel.reselltproject.shop';
+  const origin = env.VELTRIX_API_ORIGIN || panelOriginFromRequest(url);
   const targetUrl = new URL(`/api/${apiPath}`, origin);
   targetUrl.search = url.search;
 
