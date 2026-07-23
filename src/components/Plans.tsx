@@ -7,7 +7,6 @@ import {
   Crown,
   CreditCard,
   ExternalLink,
-  Loader2,
   ShoppingCart,
   Sparkles,
   AlertCircle,
@@ -60,7 +59,7 @@ export function Plans() {
   useEffect(() => {
     if (!veltrixConfig.isConfigured) {
       setLoading(false);
-      setError('API não configurada. Defina VITE_VELTRIX_PUBLIC_API_TOKEN no arquivo .env');
+      setError('Não foi possível carregar os planos. Tente novamente ou fale conosco.');
       return;
     }
 
@@ -85,13 +84,13 @@ export function Plans() {
 
   const gridClass =
     activePlans.length === 1
-      ? 'max-w-md mx-auto'
+      ? 'max-w-md mx-auto sm:grid sm:grid-cols-1'
       : activePlans.length === 2
-        ? 'max-w-4xl mx-auto md:grid-cols-2'
-        : 'max-w-6xl mx-auto sm:grid-cols-2 xl:grid-cols-3';
+        ? 'max-w-4xl mx-auto sm:grid sm:grid-cols-2'
+        : 'max-w-6xl mx-auto sm:grid sm:grid-cols-2 xl:grid-cols-3';
 
   return (
-    <section id="planos" className="container mx-auto px-4 sm:px-6 py-16 sm:py-20 lg:py-28">
+    <section id="planos" className="section-anchor container mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-24">
       <div className="text-center">
         <div className="section-badge mb-4">
           <CreditCard className="h-3.5 w-3.5" />
@@ -121,9 +120,12 @@ export function Plans() {
       )}
 
       {loading && (
-        <div className="mt-12 flex flex-col items-center justify-center gap-3 py-16 text-gray-400 sm:mt-14">
-          <Loader2 className="h-8 w-8 animate-spin text-brand-400" />
-          <p className="text-sm sm:text-base">Carregando planos disponíveis...</p>
+        <div className={`mt-10 plans-carousel sm:mt-12 ${gridClass}`}>
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="plans-carousel-item">
+              <PlanSkeleton />
+            </div>
+          ))}
         </div>
       )}
 
@@ -131,12 +133,14 @@ export function Plans() {
         <div className="mt-12 mx-auto max-w-lg rounded-2xl border border-red-500/30 bg-red-500/10 p-5 sm:p-6 text-center sm:mt-14">
           <AlertCircle className="mx-auto mb-3 h-8 w-8 text-red-400" />
           <p className="text-sm text-red-300">{error}</p>
-          {!veltrixConfig.isConfigured && (
-            <p className="mt-3 text-xs text-gray-500">
-              Copie <code className="text-brand-300">.env.example</code> para{' '}
-              <code className="text-brand-300">.env</code> e configure o token da API.
-            </p>
-          )}
+          <a
+            href="https://t.me/telks13"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary mt-4 inline-flex text-sm"
+          >
+            Falar no Telegram
+          </a>
         </div>
       )}
 
@@ -159,20 +163,29 @@ export function Plans() {
       )}
 
       {!loading && !error && activePlans.length > 0 && (
-        <>
-          <div className={`mt-10 grid gap-5 sm:mt-12 sm:gap-6 lg:gap-8 ${gridClass}`}>
+        <div id="plans-panel" role="tabpanel" className="contents">
+          <div className={`mt-10 plans-carousel sm:mt-12 sm:gap-6 lg:gap-8 ${gridClass}`}>
             {activePlans.map((plan, index) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                category={category}
-                featured={index === featuredIndex && activePlans.length > 1}
-                onPurchase={() => setSelectedPlan(plan)}
-              />
+              <div key={plan.id} className="plans-carousel-item h-full">
+                <PlanCard
+                  plan={plan}
+                  category={category}
+                  featured={index === featuredIndex && activePlans.length > 1}
+                  onPurchase={() => setSelectedPlan(plan)}
+                />
+              </div>
             ))}
           </div>
 
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 px-4 text-center text-xs text-gray-500 sm:mt-10 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-2 sm:text-sm">
+          <ul className="mt-8 flex flex-col items-center gap-2 px-4 text-center text-xs text-gray-500 sm:mt-10 sm:hidden">
+            {activeConfig.footnote.split(' · ').map((item) => (
+              <li key={item} className="flex items-center gap-2">
+                <Check className="h-3.5 w-3.5 shrink-0 text-brand-400" />
+                {item}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-8 hidden flex-wrap items-center justify-center gap-x-6 gap-y-2 px-4 text-center text-sm text-gray-500 sm:mt-10 sm:flex">
             {activeConfig.footnote.split(' · ').map((item) => (
               <span key={item} className="flex items-center gap-2">
                 <Check className="h-3.5 w-3.5 shrink-0 text-brand-400" />
@@ -180,7 +193,7 @@ export function Plans() {
               </span>
             ))}
           </div>
-        </>
+        </div>
       )}
 
       {selectedPlan && category === 'subscribe' && (
@@ -206,6 +219,7 @@ function PlanTypeSwitch({
       <button
         role="tab"
         aria-selected={category === 'subscribe'}
+        aria-controls="plans-panel"
         disabled={subscribeCount === 0}
         onClick={() => onChange('subscribe')}
         className={`plan-switch-btn ${category === 'subscribe' ? 'plan-switch-btn-active' : 'plan-switch-btn-inactive'} disabled:cursor-not-allowed disabled:opacity-40`}
@@ -221,6 +235,7 @@ function PlanTypeSwitch({
       <button
         role="tab"
         aria-selected={category === 'credit'}
+        aria-controls="plans-panel"
         disabled={creditCount === 0}
         onClick={() => onChange('credit')}
         className={`plan-switch-btn ${category === 'credit' ? 'plan-switch-btn-active' : 'plan-switch-btn-inactive'} disabled:cursor-not-allowed disabled:opacity-40`}
@@ -233,6 +248,30 @@ function PlanTypeSwitch({
           </span>
         )}
       </button>
+    </div>
+  );
+}
+
+function getPlanSubtitle(plan: ResellerPlan, isCredit: boolean): string {
+  if (isCredit && plan.credit_amount) {
+    return `Crédito · ${plan.credit_amount} créditos`;
+  }
+  if (plan.login_limit) {
+    return `Mensal · ${plan.login_limit} logins`;
+  }
+  return isCredit ? 'Plano Crédito' : 'Plano Mensal';
+}
+
+function PlanSkeleton() {
+  return (
+    <div className="glass-card h-full p-5 sm:p-7">
+      <div className="card-content space-y-4">
+        <div className="skeleton h-5 w-28" />
+        <div className="skeleton h-10 w-36" />
+        <div className="skeleton h-4 w-full" />
+        <div className="skeleton h-4 w-3/4" />
+        <div className="skeleton mt-4 h-12 w-full rounded-xl" />
+      </div>
     </div>
   );
 }
@@ -266,7 +305,7 @@ function PlanCard({
 
   return (
     <CardWrapper>
-      <div className="relative z-10 flex flex-1 flex-col">
+      <div className="card-content relative z-[1] flex flex-1 flex-col">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             {featured && (
@@ -278,8 +317,8 @@ function PlanCard({
               </div>
             )}
             <h3 className="truncate font-display text-xl font-bold text-white sm:text-2xl">{plan.name}</h3>
-            <p className="mt-1 text-xs text-gray-500 sm:text-sm">
-              {isCredit ? 'Plano Crédito' : 'Plano Mensal'}
+            <p className="mt-1 text-xs text-brand-300/80 sm:text-sm">
+              {getPlanSubtitle(plan, isCredit)}
             </p>
           </div>
           {featured ? (

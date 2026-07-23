@@ -85,7 +85,7 @@ export function CallToAction() {
       : null;
 
   return (
-    <section id="teste" className="container mx-auto px-4 sm:px-6 py-16 sm:py-20 lg:py-28">
+    <section id="teste" className="section-anchor container mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-24">
       <div className="relative overflow-hidden rounded-2xl border border-brand-500/20 bg-gradient-to-br from-brand-900/60 via-surface-card to-brand-950/80 shadow-glow sm:rounded-3xl">
         <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-brand-500/20 blur-3xl" />
         <div className="absolute -bottom-16 -right-16 h-48 w-48 rounded-full bg-accent-cyan/10 blur-3xl" />

@@ -41,7 +41,7 @@ const reasons = [
 
 export function Contact() {
   return (
-    <section className="container mx-auto px-4 sm:px-6 py-16 sm:py-20 lg:py-28">
+    <section id="contato" className="section-anchor container mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-24">
       <div className="text-center">
         <div className="section-badge mb-4">
           <HeadphonesIcon className="h-3.5 w-3.5" />
@@ -56,14 +56,14 @@ export function Contact() {
         <div className="divider-glow mt-6" />
       </div>
 
-      <div className="mt-10 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-8">
+      <div className="mt-10 grid grid-cols-1 gap-4 sm:mt-14 sm:gap-5 lg:grid-cols-3 lg:gap-8">
         {contactOptions.map((option) => (
           <a
             key={option.platform}
             href={option.href}
             target="_blank"
             rel="noopener noreferrer"
-            className={`group glass-card premium-border block p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover sm:p-7 lg:p-8 ${option.borderHover} ${option.featured ? 'ring-1 ring-sky-500/20 sm:col-span-2 lg:col-span-1' : ''}`}
+            className={`group glass-card premium-border block p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover sm:p-7 lg:p-8 ${option.borderHover} ${option.featured ? 'ring-1 ring-sky-500/20' : ''}`}
           >
             <div
               className={`absolute inset-0 bg-gradient-to-br ${option.accent} opacity-0 transition-opacity duration-300 group-hover:opacity-100`}

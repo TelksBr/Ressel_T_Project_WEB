@@ -25,6 +25,7 @@ import {
   paymentMethodLabel,
   stripDigits,
 } from '../../lib/format';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { usePaymentPolling } from '../../hooks/usePaymentPolling';
 import type {
   PaymentMethod,
@@ -59,6 +60,7 @@ const steps: { key: PurchaseStep; label: string }[] = [
 
 export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
   const [step, setStep] = useState<PurchaseStep>('credentials');
+  useBodyScrollLock(true);
   const [form, setForm] = useState<PurchaseFormData>(() => initialForm(plan));
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loadingMethods, setLoadingMethods] = useState(false);
@@ -224,18 +226,39 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
 
   const currentStepIndex = steps.findIndex((s) => s.key === step);
 
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (step === 'pix') return;
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [step, onClose]);
+
+  const handleBackdropClick = () => {
+    if (step === 'pix') return;
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={handleBackdropClick} />
 
-      <div className="relative flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl border border-white/10 bg-surface-raised shadow-2xl sm:max-h-[95vh] sm:rounded-3xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="purchase-modal-title"
+        className="relative flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl border border-white/10 bg-surface-raised shadow-2xl sm:max-h-[95vh] sm:rounded-3xl pb-[env(safe-area-inset-bottom)]"
+      >
         {/* Header */}
         <div className="flex items-start justify-between gap-3 border-b border-white/[0.06] px-4 py-3.5 sm:px-6 sm:py-4">
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-400 sm:text-xs">
               Comprar Plano
             </p>
-            <h3 className="truncate font-display text-base font-bold text-white sm:text-lg">{plan.name}</h3>
+            <h3 id="purchase-modal-title" className="truncate font-display text-base font-bold text-white sm:text-lg">{plan.name}</h3>
             <p className="text-sm text-gray-400">{formatCurrency(plan.price)}</p>
           </div>
           <button
@@ -249,27 +272,32 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
 
         {/* Step indicator */}
         {step !== 'success' && (
-          <div className="flex items-center gap-1 border-b border-white/[0.06] px-3 py-2.5 sm:gap-2 sm:px-6 sm:py-3">
-            {steps.slice(0, 3).map((s, i) => (
-              <div key={s.key} className="flex flex-1 items-center gap-1 sm:gap-2">
-                <div
-                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition sm:h-7 sm:w-7 sm:text-xs ${
-                    i < currentStepIndex
-                      ? 'bg-brand-500 text-white'
-                      : i === currentStepIndex
-                        ? 'border border-brand-400 bg-brand-500/20 text-brand-300'
-                        : 'border border-white/10 text-gray-500'
-                  }`}
-                >
-                  {i < currentStepIndex ? <Check className="h-3.5 w-3.5" /> : i + 1}
+          <>
+            <p className="border-b border-white/[0.06] px-4 py-2 text-center text-[11px] text-gray-500 sm:hidden">
+              Passo {currentStepIndex + 1} de 3 — {steps[currentStepIndex]?.label}
+            </p>
+            <div className="flex items-center gap-1 border-b border-white/[0.06] px-3 py-2.5 sm:gap-2 sm:px-6 sm:py-3">
+              {steps.slice(0, 3).map((s, i) => (
+                <div key={s.key} className="flex flex-1 items-center gap-1 sm:gap-2">
+                  <div
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition sm:h-7 sm:w-7 sm:text-xs ${
+                      i < currentStepIndex
+                        ? 'bg-brand-500 text-white'
+                        : i === currentStepIndex
+                          ? 'border border-brand-400 bg-brand-500/20 text-brand-300'
+                          : 'border border-white/10 text-gray-500'
+                    }`}
+                  >
+                    {i < currentStepIndex ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                  </div>
+                  <span className={`hidden text-xs sm:block ${i === currentStepIndex ? 'text-white' : 'text-gray-500'}`}>
+                    {s.label}
+                  </span>
+                  {i < 2 && <div className="mx-1 h-px flex-1 bg-white/10" />}
                 </div>
-                <span className={`hidden text-xs sm:block ${i === currentStepIndex ? 'text-white' : 'text-gray-500'}`}>
-                  {s.label}
-                </span>
-                {i < 2 && <div className="mx-1 h-px flex-1 bg-white/10" />}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </>
         )}
 
         {/* Content */}

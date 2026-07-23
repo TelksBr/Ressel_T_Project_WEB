@@ -43,13 +43,13 @@ const features = [
 
 export function Features() {
   return (
-    <section className="container mx-auto px-4 sm:px-6 py-16 sm:py-20 lg:py-28">
+    <section className="section-anchor container mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-24">
       <div className="glass-card premium-border overflow-hidden">
         <div className="relative p-5 sm:p-10 lg:p-16">
           <div className="absolute -right-20 -top-20 h-60 w-60 rounded-full bg-brand-600/10 blur-3xl" />
           <div className="absolute -bottom-20 -left-20 h-60 w-60 rounded-full bg-accent-cyan/5 blur-3xl" />
 
-          <div className="relative z-10 text-center">
+            <div className="relative z-10 text-center">
             <div className="section-badge mb-4">
               <Sparkles className="h-3.5 w-3.5" />
               Recursos

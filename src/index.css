@@ -15,16 +15,34 @@
   ::selection {
     @apply bg-brand-600/40 text-white;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
 @layer components {
+  .section-anchor {
+    @apply scroll-mt-[4.5rem] sm:scroll-mt-24;
+  }
+
   .glass-card {
-    @apply relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl shadow-card;
+    @apply relative isolate overflow-hidden rounded-2xl border border-white/[0.08] bg-surface-card/80 shadow-card md:bg-white/[0.03] md:backdrop-blur-xl;
   }
 
   .glass-card::before {
     content: '';
-    @apply pointer-events-none absolute inset-0 rounded-2xl;
+    @apply pointer-events-none absolute inset-0 z-0 rounded-2xl;
     background: linear-gradient(
       135deg,
       rgba(255, 255, 255, 0.06) 0%,
@@ -43,35 +61,53 @@
   }
 
   .btn-primary {
-    @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 px-6 py-3 font-semibold text-white shadow-glow-sm transition-all duration-300;
+    @apply relative isolate inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 px-6 py-3 font-semibold text-white shadow-glow-sm transition-all duration-300;
+  }
+
+  .btn-primary > * {
+    @apply relative z-[1];
   }
 
   .btn-primary:hover {
-    @apply from-brand-500 to-brand-400 shadow-glow -translate-y-0.5;
+    @apply from-brand-500 to-brand-400 shadow-glow;
   }
 
-  .btn-primary::after {
-    content: '';
-    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
-    background: linear-gradient(
-      105deg,
-      transparent 40%,
-      rgba(255, 255, 255, 0.15) 50%,
-      transparent 60%
-    );
-    background-size: 200% 100%;
-  }
+  @media (hover: hover) {
+    .btn-primary:hover {
+      @apply -translate-y-0.5;
+    }
 
-  .btn-primary:hover::after {
-    @apply opacity-100 animate-shimmer;
+    .btn-primary::after {
+      content: '';
+      @apply pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity duration-300;
+      background: linear-gradient(
+        105deg,
+        transparent 40%,
+        rgba(255, 255, 255, 0.15) 50%,
+        transparent 60%
+      );
+      background-size: 200% 100%;
+    }
+
+    .btn-primary:hover::after {
+      @apply opacity-100 animate-shimmer;
+    }
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-6 py-3 font-semibold text-white backdrop-blur-sm transition-all duration-300;
+    @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-6 py-3 font-semibold text-white backdrop-blur-sm transition-all duration-300;
   }
 
-  .btn-secondary:hover {
-    @apply border-brand-400/40 bg-white/[0.08] -translate-y-0.5 shadow-glow-sm;
+  @media (hover: hover) {
+    .btn-secondary:hover {
+      @apply border-brand-400/40 bg-white/[0.08] -translate-y-0.5 shadow-glow-sm;
+    }
+  }
+
+  .btn-primary:focus-visible,
+  .btn-secondary:focus-visible,
+  .input-field:focus-visible {
+    @apply outline-none ring-2 ring-brand-400 ring-offset-2 ring-offset-surface;
   }
 
   .section-badge {
@@ -94,25 +130,38 @@
     @apply flex h-14 w-14 items-center justify-center rounded-xl border border-brand-500/20 bg-gradient-to-br from-brand-600/20 to-brand-800/10 text-brand-400 shadow-glow-sm;
   }
 
+  /* Borda gradiente — desativada no mobile (bug de mask em Safari/Chrome mobile) */
   .premium-border {
-    position: relative;
+    @apply relative isolate border border-brand-500/25 md:border-transparent;
   }
 
-  .premium-border::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.5), rgba(34, 211, 238, 0.2), rgba(232, 121, 249, 0.3));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
+  @media (min-width: 768px) {
+    .premium-border::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(
+        135deg,
+        rgba(139, 92, 246, 0.5),
+        rgba(34, 211, 238, 0.2),
+        rgba(232, 121, 249, 0.3)
+      );
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+  }
+
+  .card-content {
+    @apply relative z-[1];
   }
 
   .input-field {
-    @apply w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-gray-500 outline-none transition;
+    @apply w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-base text-white placeholder-gray-500 outline-none transition sm:text-sm;
   }
 
   .input-field:focus {
@@ -124,7 +173,7 @@
   }
 
   .plan-switch-btn {
-    @apply flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-semibold transition-all duration-300 sm:gap-2 sm:px-4 sm:py-3 sm:text-sm;
+    @apply flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-semibold transition-all duration-300 sm:gap-2 sm:px-4 sm:py-3 sm:text-sm;
   }
 
   .plan-switch-btn-active {
@@ -133,6 +182,18 @@
 
   .plan-switch-btn-inactive {
     @apply text-gray-400 hover:text-white;
+  }
+
+  .plans-carousel {
+    @apply -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 pt-1 scrollbar-none sm:mx-0 sm:grid sm:snap-none sm:overflow-visible sm:px-0 sm:pb-0;
+  }
+
+  .plans-carousel-item {
+    @apply w-[min(100%,340px)] shrink-0 snap-center sm:w-auto sm:shrink;
+  }
+
+  .skeleton {
+    @apply animate-pulse rounded-lg bg-white/[0.08];
   }
 }
 
@@ -148,5 +209,22 @@
   }
   .animation-delay-400 {
     animation-delay: 400ms;
+  }
+
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (max-width: 767px) {
+    .animate-fade-up {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
   }
 }

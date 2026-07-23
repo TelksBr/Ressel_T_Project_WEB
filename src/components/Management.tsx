@@ -23,14 +23,14 @@ const channels = [
     accent: 'from-brand-500/20 to-brand-700/5',
     iconColor: 'text-brand-400',
     borderColor: 'hover:border-brand-500/30',
-    href: 'https://painel.reselltproject.store',
+    href: 'https://painel.reselltproject.shop',
     cta: 'Acessar Painel',
   },
 ];
 
 export function Management() {
   return (
-    <section className="container mx-auto px-4 sm:px-6 py-16 sm:py-20 lg:py-28">
+    <section className="section-anchor container mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-24">
       <div className="text-center">
         <div className="section-badge mb-4">
           <Layers className="h-3.5 w-3.5" />
@@ -55,7 +55,7 @@ export function Management() {
               className={`absolute inset-0 bg-gradient-to-br ${channel.accent} opacity-0 transition-opacity duration-500 group-hover:opacity-100`}
             />
 
-            <div className="relative z-10 flex h-full flex-col">
+            <div className="card-content relative z-[1] flex h-full flex-col">
               {channel.featured && (
                 <span className="mb-4 inline-flex w-fit rounded-full border border-sky-400/30 bg-sky-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-sky-300">
                   Revenda via Bot
