@@ -9,7 +9,7 @@ import {
   Shield,
   Sparkles,
 } from 'lucide-react';
-import { veltrixApi, VeltrixApiError } from '../lib/veltrix-api';
+import { veltrixApi, getErrorMessage } from '../lib/veltrix-api';
 import { veltrixConfig } from '../lib/config';
 import { formatPhone, isTrustedEmailDomain, isValidEmail, stripDigits } from '../lib/format';
 import type { TestConfig } from '../types/veltrix';
@@ -70,7 +70,7 @@ export function CallToAction() {
       setPhone('');
       setIncludeV2ray(false);
     } catch (err) {
-      setError(err instanceof VeltrixApiError ? err.message : 'Não foi possível criar o teste.');
+      setError(getErrorMessage(err, 'Não foi possível criar o teste.'));
     } finally {
       setSubmitting(false);
     }

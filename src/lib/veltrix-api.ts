@@ -26,6 +26,42 @@ class VeltrixApiError extends Error {
   }
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return {};
+}
+
+function firstString(...values: unknown[]): string {
+  for (const value of values) {
+    if (typeof value === 'string' && value.length > 0) return value;
+    if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  }
+  return '';
+}
+
+function extractApiErrorMessage(data: unknown, fallback: string): string {
+  const obj = asRecord(data);
+  const nested = asRecord(obj.data);
+  const fieldErrors = obj.errors;
+
+  if (fieldErrors && typeof fieldErrors === 'object') {
+    const parts = Object.values(fieldErrors as Record<string, unknown>)
+      .flatMap((value) => (Array.isArray(value) ? value : [value]))
+      .map((value) => firstString(value))
+      .filter(Boolean);
+    if (parts.length) return parts.join(' ');
+  }
+
+  return firstString(obj.message, obj.error, nested.message) || fallback;
+}
+
+export function getErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error && err.message.trim()) return err.message;
+  return fallback;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     Accept: 'application/json',
@@ -65,14 +101,19 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     }
   }
 
-  if (!response.ok) {
-    const errorData = data as ApiError | null;
-    const message =
-      errorData?.message ||
-      errorData?.error ||
-      (text && !text.startsWith('<') ? text : null) ||
-      `Erro na API (${response.status})`;
-    throw new VeltrixApiError(message, response.status, errorData ?? undefined);
+  const failure =
+    !response.ok ||
+    (data !== null && typeof data === 'object' && asRecord(data).success === false);
+
+  if (failure) {
+    const fallback = response.ok
+      ? 'Não foi possível concluir a operação.'
+      : `Erro na API (${response.status})`;
+    throw new VeltrixApiError(
+      extractApiErrorMessage(data, fallback),
+      response.status,
+      (data as ApiError | null) ?? undefined
+    );
   }
 
   if (data === null && text && !text.startsWith('<')) {
@@ -144,21 +185,6 @@ function normalizePlans(data: unknown): ResellerPlan[] {
   return plans
     .map((plan) => normalizePlan(plan as Record<string, unknown>))
     .filter((plan): plan is ResellerPlan => plan !== null);
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return {};
-}
-
-function firstString(...values: unknown[]): string {
-  for (const value of values) {
-    if (typeof value === 'string' && value.length > 0) return value;
-    if (typeof value === 'number' && Number.isFinite(value)) return String(value);
-  }
-  return '';
 }
 
 function normalizePaymentMethod(raw: Record<string, unknown>): PaymentMethod | null {

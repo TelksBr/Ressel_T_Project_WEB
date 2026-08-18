@@ -14,7 +14,7 @@ import {
   User,
   X,
 } from 'lucide-react';
-import { veltrixApi, VeltrixApiError } from '../../lib/veltrix-api';
+import { veltrixApi, getErrorMessage } from '../../lib/veltrix-api';
 import { veltrixConfig } from '../../lib/config';
 import {
   formatCpf,
@@ -85,8 +85,14 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
     try {
       const available = await veltrixApi.checkUsername(username);
       setUsernameStatus(available ? 'available' : 'taken');
-    } catch {
-      setUsernameStatus('idle');
+    } catch (err) {
+      const message = getErrorMessage(err, '');
+      if (/já está em uso|already (in )?use|indisponível/i.test(message)) {
+        setUsernameStatus('taken');
+        setError(message);
+      } else {
+        setUsernameStatus('idle');
+      }
     }
   }, []);
 
@@ -99,8 +105,14 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
     try {
       const available = await veltrixApi.checkEmail(email);
       setEmailStatus(available ? 'available' : 'taken');
-    } catch {
-      setEmailStatus('idle');
+    } catch (err) {
+      const message = getErrorMessage(err, '');
+      if (/já está em uso|already (in )?use|indisponível/i.test(message)) {
+        setEmailStatus('taken');
+        setError(message);
+      } else {
+        setEmailStatus('idle');
+      }
     }
   }, []);
 
@@ -134,7 +146,7 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
           setError('Nenhum método PIX disponível para este plano.');
         }
       })
-      .catch(() => setError('Não foi possível carregar os métodos de pagamento.'))
+      .catch((err) => setError(getErrorMessage(err, 'Não foi possível carregar os métodos de pagamento.')))
       .finally(() => setLoadingMethods(false));
   }, [step, plan.price]);
 
@@ -148,6 +160,10 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
   const validateCredentials = (): boolean => {
     if (!/^[a-zA-Z0-9]{3,32}$/.test(form.resellerUsername)) {
       setError('Username deve ter 3 a 32 caracteres, apenas letras e números.');
+      return false;
+    }
+    if (usernameStatus === 'checking' || emailStatus === 'checking') {
+      setError('Aguarde a verificação do username e e-mail.');
       return false;
     }
     if (usernameStatus === 'taken') {
@@ -224,7 +240,7 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
       });
       setStep('pix');
     } catch (err) {
-      setError(err instanceof VeltrixApiError ? err.message : 'Erro ao processar pagamento.');
+      setError(getErrorMessage(err, 'Erro ao processar pagamento.'));
     } finally {
       setSubmitting(false);
     }
@@ -313,14 +329,14 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
           </>
         )}
 
+        {error && (
+          <div className="border-b border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300 sm:px-6">
+            {error}
+          </div>
+        )}
+
         {/* Content */}
         <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 sm:py-6">
-          {error && (
-            <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-              {error}
-            </div>
-          )}
-
           {/* Step: Credentials */}
           {step === 'credentials' && (
             <div className="space-y-5">
@@ -528,8 +544,8 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
                     : 'Verificando pagamento...'}
               </div>
 
-              {(pollingError || error) && (
-                <p className="text-sm text-red-400">{pollingError ?? error}</p>
+              {pollingError && (
+                <p className="text-sm text-red-400">{pollingError}</p>
               )}
             </div>
           )}

@@ -97,9 +97,11 @@ export interface PaymentStatusResponse {
 }
 
 export interface ApiError {
+  success?: boolean;
   message?: string;
   error?: string;
-  errors?: Record<string, string[]>;
+  error_type?: string;
+  errors?: Record<string, string[] | string>;
 }
 
 export type PurchaseStep = 'plan' | 'credentials' | 'payment' | 'pix' | 'success';
