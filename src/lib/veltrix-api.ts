@@ -5,6 +5,8 @@ import type {
   CreatePaymentPayload,
   CreateTestPayload,
   CreateTestResponse,
+  PaymentGateway,
+  PaymentMethod,
   PaymentMethodsResponse,
   PaymentStatusResponse,
   PixPaymentData,
@@ -144,42 +146,101 @@ function normalizePlans(data: unknown): ResellerPlan[] {
     .filter((plan): plan is ResellerPlan => plan !== null);
 }
 
-function normalizePaymentMethods(data: PaymentMethodsResponse): PaymentMethodsResponse {
-  if (data.methods) return data;
-  if (data.payment_methods) return { methods: data.payment_methods, gateway: data.gateway };
-  return data;
+function asRecord(value: unknown): Record<string, unknown> {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return {};
+}
+
+function firstString(...values: unknown[]): string {
+  for (const value of values) {
+    if (typeof value === 'string' && value.length > 0) return value;
+    if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  }
+  return '';
+}
+
+function normalizePaymentMethod(raw: Record<string, unknown>): PaymentMethod | null {
+  const gateway = asRecord(raw.gateway);
+  const gatewayId = Number(raw.gateway_id ?? gateway.id ?? 0);
+  const methodId = firstString(raw.method_id);
+  const genericType = firstString(raw.type);
+  const type = methodId || (genericType === 'instant' ? 'pix' : genericType);
+
+  if (!gatewayId || !type) return null;
+
+  return {
+    id: Number(raw.id ?? gatewayId),
+    gateway_id: gatewayId,
+    type,
+    name: firstString(raw.name, type),
+    method_id: methodId || type,
+    selection_key: firstString(raw.selection_key) || `${gatewayId}:${type}`,
+    gateway: Object.keys(gateway).length ? (gateway as PaymentGateway) : undefined,
+  };
+}
+
+function normalizePaymentMethods(data: unknown): PaymentMethodsResponse {
+  const root = asRecord(data);
+  const inner = asRecord(root.data);
+  const rawMethods = inner.methods ?? inner.payment_methods ?? root.methods ?? root.payment_methods;
+  const methods = Array.isArray(rawMethods)
+    ? rawMethods
+        .map((item) => (item && typeof item === 'object' ? normalizePaymentMethod(asRecord(item)) : null))
+        .filter((method): method is PaymentMethod => method !== null)
+    : [];
+
+  return {
+    methods,
+    gateway: (inner.gateway ?? root.gateway) as PaymentGateway | undefined,
+  };
 }
 
 function extractPixData(data: Record<string, unknown>): PixPaymentData {
-  const payment = (data.payment ?? data.data ?? data) as Record<string, unknown>;
-  const pix = (payment.pix ?? payment.pix_data ?? payment) as Record<string, unknown>;
+  const nested = asRecord(data.data);
+  const payment = asRecord(data.payment);
+  const source = { ...data, ...nested, ...payment };
+  const pix = { ...asRecord(source.pix_data), ...asRecord(source.pix) };
 
-  const paymentId = String(
-    payment.payment_id ?? payment.id ?? data.payment_id ?? data.id ?? ''
+  const paymentId = firstString(source.payment_id, source.id, nested.payment_id, payment.payment_id);
+  const copyPaste = firstString(
+    pix.qr_code_text,
+    pix.copy_paste,
+    pix.pix_copy_paste,
+    pix.emv,
+    source.qr_code_text,
+    source.copy_paste,
+    source.emv
   );
+  const qrBase64 = firstString(pix.qr_code_base64, pix.pix_qr_code_base64, source.qr_code_base64);
 
   return {
     payment_id: paymentId,
-    order_id: String(payment.order_id ?? data.order_id ?? ''),
-    status: String(payment.status ?? data.status ?? 'pending'),
-    pix_qr_code: String(pix.qr_code ?? pix.pix_qr_code ?? payment.qr_code ?? ''),
-    pix_qr_code_base64: String(
-      pix.qr_code_base64 ?? pix.pix_qr_code_base64 ?? payment.qr_code_base64 ?? ''
-    ),
-    pix_copy_paste: String(
-      pix.copy_paste ?? pix.pix_copy_paste ?? pix.emv ?? payment.copy_paste ?? payment.emv ?? ''
-    ),
-    qr_code: String(pix.qr_code ?? ''),
-    qr_code_base64: String(pix.qr_code_base64 ?? ''),
-    copy_paste: String(pix.copy_paste ?? pix.emv ?? ''),
-    emv: String(pix.emv ?? ''),
-    expiration: String(pix.expiration ?? payment.expiration ?? ''),
-    amount: Number(payment.amount ?? data.amount ?? 0) || undefined,
+    order_id: firstString(source.order_id),
+    status: firstString(source.status) || 'pending',
+    pix_qr_code: firstString(pix.qr_code, pix.pix_qr_code, source.qr_code),
+    pix_qr_code_base64: qrBase64,
+    pix_copy_paste: copyPaste,
+    qr_code: firstString(pix.qr_code, pix.qr_code_text),
+    qr_code_base64: qrBase64,
+    copy_paste: copyPaste,
+    emv: firstString(pix.emv, copyPaste),
+    expiration: firstString(pix.expires_at, pix.expiration, source.expires_at, source.expiration),
+    amount: Number(source.amount ?? 0) || undefined,
   };
 }
 
 function extractCredentials(data: PaymentStatusResponse): PaymentStatusResponse['account'] {
-  const account = data.account ?? data.reseller ?? data.credentials;
+  const nested = asRecord((data as unknown as { data?: unknown }).data) as PaymentStatusResponse;
+  const account =
+    data.account ??
+    data.reseller ??
+    data.credentials ??
+    nested.account ??
+    nested.reseller ??
+    nested.credentials;
+
   if (account) {
     return {
       ...account,
@@ -225,12 +286,16 @@ export const veltrixApi = {
   },
 
   async getPaymentStatus(paymentId: string): Promise<PaymentStatusResponse> {
-    const data = await request<PaymentStatusResponse>(
+    const data = await request<Record<string, unknown>>(
       `/public/payment/${encodeURIComponent(paymentId)}/status`
     );
+    const nested = asRecord(data.data);
+    const payload = (nested.status ? { ...data, ...nested } : data) as PaymentStatusResponse;
+
     return {
-      ...data,
-      account: extractCredentials(data),
+      ...payload,
+      status: String(payload.status ?? nested.status ?? 'pending'),
+      account: extractCredentials(payload),
     };
   },
 

@@ -120,7 +120,20 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
     setLoadingMethods(true);
     veltrixApi
       .getPaymentMethods(plan.price)
-      .then((res) => setPaymentMethods(res.methods ?? []))
+      .then((res) => {
+        const methods = (res.methods ?? []).filter((method) => {
+          const type = method.type.toLowerCase();
+          const methodId = (method.method_id ?? '').toLowerCase();
+          return type === 'pix' || methodId === 'pix';
+        });
+
+        setPaymentMethods(methods);
+        setForm((prev) => ({ ...prev, paymentMethod: methods[0] ?? null }));
+
+        if (methods.length === 0) {
+          setError('Nenhum método PIX disponível para este plano.');
+        }
+      })
       .catch(() => setError('Não foi possível carregar os métodos de pagamento.'))
       .finally(() => setLoadingMethods(false));
   }, [step, plan.price]);
@@ -133,8 +146,8 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
   });
 
   const validateCredentials = (): boolean => {
-    if (form.resellerUsername.length < 3) {
-      setError('Username deve ter pelo menos 3 caracteres.');
+    if (!/^[a-zA-Z0-9]{3,32}$/.test(form.resellerUsername)) {
+      setError('Username deve ter 3 a 32 caracteres, apenas letras e números.');
       return false;
     }
     if (usernameStatus === 'taken') {
@@ -186,7 +199,7 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
       const result = await veltrixApi.createPayment({
         plan_id: plan.id,
         gateway_id: form.paymentMethod.gateway_id,
-        payment_method_type: form.paymentMethod.type,
+        payment_method_type: form.paymentMethod.method_id || form.paymentMethod.type,
         customer_name: form.customerName.trim(),
         customer_email: form.customerEmail.trim(),
         customer_cpf: stripDigits(form.customerCpf),
@@ -323,8 +336,10 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
                   <input
                     type="text"
                     value={form.resellerUsername}
-                    onChange={(e) => updateForm('resellerUsername', e.target.value.replace(/\s/g, ''))}
-                    placeholder="seu_usuario"
+                    onChange={(e) =>
+                      updateForm('resellerUsername', e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 32))
+                    }
+                    placeholder="seurevenda"
                     className="input-field"
                     autoComplete="username"
                   />

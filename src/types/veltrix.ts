@@ -25,13 +25,22 @@ export interface PaymentMethod {
   gateway_id: number;
   type: 'pix' | 'credit_card' | 'cash' | string;
   name: string;
+  method_id?: string;
+  selection_key?: string;
   gateway?: PaymentGateway;
 }
 
 export interface PaymentMethodsResponse {
+  success?: boolean;
   methods?: PaymentMethod[];
   payment_methods?: PaymentMethod[];
   gateway?: PaymentGateway;
+  data?: {
+    methods?: PaymentMethod[];
+    payment_methods?: PaymentMethod[];
+    gateways?: PaymentGateway[];
+    gateway?: PaymentGateway;
+  };
 }
 
 export interface AvailabilityResponse {

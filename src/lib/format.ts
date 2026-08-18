@@ -71,7 +71,10 @@ export function isTrustedEmailDomain(
 export function paymentMethodLabel(type: string): string {
   const labels: Record<string, string> = {
     pix: 'PIX',
+    instant: 'PIX',
     credit_card: 'Cartão de Crédito',
+    card: 'Cartão de Crédito',
+    paypal: 'PayPal',
     cash: 'Dinheiro / Manual',
   };
   return labels[type] ?? type;
