@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   Bot,
@@ -21,26 +22,6 @@ const TELEGRAM_BOT_URL = 'https://t.me/ssh_t_project_vip_bot';
 
 type PlanCategory = 'subscribe' | 'credit';
 
-const categoryConfig: Record<
-  PlanCategory,
-  { label: string; shortLabel: string; icon: typeof Calendar; description: string; footnote: string }
-> = {
-  subscribe: {
-    label: 'Planos Assinatura',
-    shortLabel: 'Assinatura',
-    icon: Calendar,
-    description: 'Limite mensal de logins — ideal para revendedores que preferem o painel web.',
-    footnote: 'Pagamento via PIX · Credenciais entregues na hora · Painel web incluso',
-  },
-  credit: {
-    label: 'Planos Crédito',
-    shortLabel: 'Crédito',
-    icon: Coins,
-    description: 'Créditos para criar logins — contrate e gerencie pelo bot oficial no Telegram.',
-    footnote: 'Compra e gestão via @ssh_t_project_vip_bot · Bots Telegram inclusos',
-  },
-};
-
 function isSubscribePlan(plan: ResellerPlan) {
   return plan.plan_type === 'subscribe' || plan.plan_type === 'subscription';
 }
@@ -50,6 +31,39 @@ function isCreditPlan(plan: ResellerPlan) {
 }
 
 export function Plans() {
+  const categoryConfig: Record<
+    PlanCategory,
+    {
+      label: string;
+      shortLabel: string;
+      icon: typeof Calendar;
+      description: string;
+      footnote: string;
+    }
+  > = {
+    subscribe: {
+      label: t('Planos Assinatura'),
+      shortLabel: t('Assinatura'),
+      icon: Calendar,
+      description: t(
+        'Limite mensal de logins — ideal para revendedores que preferem o painel web.',
+      ),
+      footnote: t(
+        'Pagamento via PIX · Credenciais entregues na hora · Painel web incluso',
+      ),
+    },
+    credit: {
+      label: t('Planos Crédito'),
+      shortLabel: t('Crédito'),
+      icon: Coins,
+      description: t(
+        'Créditos para criar logins — contrate e gerencie pelo bot oficial no Telegram.',
+      ),
+      footnote: t(
+        'Compra e gestão via @ssh_t_project_vip_bot · Bots Telegram inclusos',
+      ),
+    },
+  };
   const [plans, setPlans] = useState<ResellerPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +73,11 @@ export function Plans() {
   useEffect(() => {
     if (!veltrixConfig.isConfigured) {
       setLoading(false);
-      setError('Não foi possível carregar os planos. Tente novamente ou fale conosco.');
+      setError(
+        t(
+          'Não foi possível carregar os planos. Tente novamente ou fale conosco.',
+        ),
+      );
       return;
     }
 
@@ -72,15 +90,24 @@ export function Plans() {
         if (hasSubscribe) setCategory('subscribe');
         else if (hasCredit) setCategory('credit');
       })
-      .catch((err) => setError(err instanceof Error ? err.message : 'Erro ao carregar planos.'))
+      .catch((err) =>
+        setError(
+          err instanceof Error ? err.message : t('Erro ao carregar planos.'),
+        ),
+      )
       .finally(() => setLoading(false));
   }, []);
 
-  const subscribePlans = plans.filter(isSubscribePlan).sort((a, b) => a.price - b.price);
-  const creditPlans = plans.filter(isCreditPlan).sort((a, b) => a.price - b.price);
+  const subscribePlans = plans
+    .filter(isSubscribePlan)
+    .sort((a, b) => a.price - b.price);
+  const creditPlans = plans
+    .filter(isCreditPlan)
+    .sort((a, b) => a.price - b.price);
   const activePlans = category === 'subscribe' ? subscribePlans : creditPlans;
   const activeConfig = categoryConfig[category];
-  const featuredIndex = activePlans.length > 1 ? Math.floor(activePlans.length / 2) : 0;
+  const featuredIndex =
+    activePlans.length > 1 ? Math.floor(activePlans.length / 2) : 0;
 
   const gridClass =
     activePlans.length === 1
@@ -90,17 +117,23 @@ export function Plans() {
         : 'max-w-6xl mx-auto sm:grid sm:grid-cols-2 xl:grid-cols-3';
 
   return (
-    <section id="planos" className="section-anchor container mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-24">
+    <section
+      id="planos"
+      className="section-anchor container mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-24"
+    >
       <div className="text-center">
         <div className="section-badge mb-4">
           <CreditCard className="h-3.5 w-3.5" />
-          Planos
+          {t('Planos')}
         </div>
         <h2 className="section-title">
-          Escolha seu plano e <span className="gradient-text">compre agora</span>
+          {t('Escolha seu plano e')}{' '}
+          <span className="gradient-text">{t('compre agora')}</span>
         </h2>
         <p className="section-subtitle px-2">
-          Assinatura mensal pelo site ou planos crédito via bot no Telegram
+          {t(
+            'Assinatura mensal pelo site ou planos crédito via bot no Telegram',
+          )}
         </p>
         <div className="divider-glow mt-6" />
       </div>
@@ -132,14 +165,14 @@ export function Plans() {
       {!loading && error && (
         <div className="mt-12 mx-auto max-w-lg rounded-2xl border border-red-500/30 bg-red-500/10 p-5 sm:p-6 text-center sm:mt-14">
           <AlertCircle className="mx-auto mb-3 h-8 w-8 text-red-400" />
-          <p className="text-sm text-red-300">{error}</p>
+          <p className="text-sm text-red-300">{t(error)}</p>
           <a
             href="https://t.me/telks13"
             target="_blank"
             rel="noopener noreferrer"
             className="btn-secondary mt-4 inline-flex text-sm"
           >
-            Falar no Telegram
+            {t('Falar no Telegram')}
           </a>
         </div>
       )}
@@ -147,16 +180,24 @@ export function Plans() {
       {!loading && !error && activePlans.length === 0 && (
         <div className="mt-12 rounded-2xl border border-white/[0.06] bg-white/[0.02] py-14 text-center sm:mt-14">
           <p className="text-sm text-gray-500 sm:text-base">
-            Nenhum plano de {activeConfig.shortLabel.toLowerCase()} disponível no momento.
+            {t('Nenhum plano de {category} disponível no momento.', {
+              category: activeConfig.shortLabel.toLowerCase(),
+            })}
           </p>
           {category === 'subscribe' && creditPlans.length > 0 && (
-            <button onClick={() => setCategory('credit')} className="btn-secondary mt-4 text-sm">
-              Ver planos crédito
+            <button
+              onClick={() => setCategory('credit')}
+              className="btn-secondary mt-4 text-sm"
+            >
+              {t('Ver planos crédito')}
             </button>
           )}
           {category === 'credit' && subscribePlans.length > 0 && (
-            <button onClick={() => setCategory('subscribe')} className="btn-secondary mt-4 text-sm">
-              Ver planos assinatura
+            <button
+              onClick={() => setCategory('subscribe')}
+              className="btn-secondary mt-4 text-sm"
+            >
+              {t('Ver planos assinatura')}
             </button>
           )}
         </div>
@@ -164,7 +205,9 @@ export function Plans() {
 
       {!loading && !error && activePlans.length > 0 && (
         <div id="plans-panel" role="tabpanel" className="contents">
-          <div className={`mt-10 plans-carousel sm:mt-12 sm:gap-6 lg:gap-8 ${gridClass}`}>
+          <div
+            className={`mt-10 plans-carousel sm:mt-12 sm:gap-6 lg:gap-8 ${gridClass}`}
+          >
             {activePlans.map((plan, index) => (
               <div key={plan.id} className="plans-carousel-item h-full">
                 <PlanCard
@@ -178,26 +221,35 @@ export function Plans() {
           </div>
 
           <ul className="mt-8 flex flex-col items-center gap-2 px-4 text-center text-xs text-gray-500 sm:mt-10 sm:hidden">
-            {(activeConfig.footnote ?? '').split(' · ').filter(Boolean).map((item) => (
-              <li key={item} className="flex items-center gap-2">
-                <Check className="h-3.5 w-3.5 shrink-0 text-brand-400" />
-                {item}
-              </li>
-            ))}
+            {(activeConfig.footnote ?? '')
+              .split(' · ')
+              .filter(Boolean)
+              .map((item) => (
+                <li key={item} className="flex items-center gap-2">
+                  <Check className="h-3.5 w-3.5 shrink-0 text-brand-400" />
+                  {item}
+                </li>
+              ))}
           </ul>
           <div className="mt-8 hidden flex-wrap items-center justify-center gap-x-6 gap-y-2 px-4 text-center text-sm text-gray-500 sm:mt-10 sm:flex">
-            {(activeConfig.footnote ?? '').split(' · ').filter(Boolean).map((item) => (
-              <span key={item} className="flex items-center gap-2">
-                <Check className="h-3.5 w-3.5 shrink-0 text-brand-400" />
-                {item}
-              </span>
-            ))}
+            {(activeConfig.footnote ?? '')
+              .split(' · ')
+              .filter(Boolean)
+              .map((item) => (
+                <span key={item} className="flex items-center gap-2">
+                  <Check className="h-3.5 w-3.5 shrink-0 text-brand-400" />
+                  {item}
+                </span>
+              ))}
           </div>
         </div>
       )}
 
       {selectedPlan && category === 'subscribe' && (
-        <PurchaseModal plan={selectedPlan} onClose={() => setSelectedPlan(null)} />
+        <PurchaseModal
+          plan={selectedPlan}
+          onClose={() => setSelectedPlan(null)}
+        />
       )}
     </section>
   );
@@ -215,7 +267,11 @@ function PlanTypeSwitch({
   creditCount: number;
 }) {
   return (
-    <div className="plan-switch w-full max-w-sm sm:max-w-md" role="tablist" aria-label="Tipo de plano">
+    <div
+      className="plan-switch w-full max-w-sm sm:max-w-md"
+      role="tablist"
+      aria-label={t('Tipo de plano')}
+    >
       <button
         role="tab"
         aria-selected={category === 'subscribe'}
@@ -225,7 +281,7 @@ function PlanTypeSwitch({
         className={`plan-switch-btn ${category === 'subscribe' ? 'plan-switch-btn-active' : 'plan-switch-btn-inactive'} disabled:cursor-not-allowed disabled:opacity-40`}
       >
         <Calendar className="h-4 w-4 shrink-0" />
-        <span className="truncate">Assinatura</span>
+        <span className="truncate">{t('Assinatura')}</span>
         {subscribeCount > 0 && (
           <span className="ml-1 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-bold">
             {subscribeCount}
@@ -241,7 +297,7 @@ function PlanTypeSwitch({
         className={`plan-switch-btn ${category === 'credit' ? 'plan-switch-btn-active' : 'plan-switch-btn-inactive'} disabled:cursor-not-allowed disabled:opacity-40`}
       >
         <Coins className="h-4 w-4 shrink-0" />
-        <span className="truncate">Crédito</span>
+        <span className="truncate">{t('Crédito')}</span>
         {creditCount > 0 && (
           <span className="ml-1 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-bold">
             {creditCount}
@@ -254,12 +310,12 @@ function PlanTypeSwitch({
 
 function getPlanSubtitle(plan: ResellerPlan, isCredit: boolean): string {
   if (isCredit && plan.credit_amount) {
-    return `Crédito · ${plan.credit_amount} créditos`;
+    return t('Crédito · {count} créditos', { count: plan.credit_amount });
   }
   if (plan.login_limit) {
-    return `Mensal · ${plan.login_limit} logins`;
+    return t('Mensal · {count} logins', { count: plan.login_limit });
   }
-  return isCredit ? 'Plano Crédito' : 'Plano Mensal';
+  return isCredit ? t('Plano Crédito') : t('Plano Mensal');
 }
 
 function PlanSkeleton() {
@@ -312,11 +368,13 @@ function PlanCard({
               <div className="mb-2 flex items-center gap-2">
                 <Crown className="h-4 w-4 shrink-0 text-accent-gold sm:h-5 sm:w-5" />
                 <span className="text-[10px] font-bold uppercase tracking-widest text-accent-gold sm:text-xs">
-                  Mais Popular
+                  {t('Mais Popular')}
                 </span>
               </div>
             )}
-            <h3 className="truncate font-display text-xl font-bold text-white sm:text-2xl">{plan.name}</h3>
+            <h3 className="truncate font-display text-xl font-bold text-white sm:text-2xl">
+              {plan.name}
+            </h3>
             <p className="mt-1 text-xs text-brand-300/80 sm:text-sm">
               {getPlanSubtitle(plan, isCredit)}
             </p>
@@ -325,7 +383,7 @@ function PlanCard({
             <Sparkles className="h-5 w-5 shrink-0 text-accent-gold" />
           ) : (
             <span className="shrink-0 rounded-full border border-brand-500/30 bg-brand-500/10 px-2.5 py-1 text-[10px] font-semibold text-brand-300 sm:px-3 sm:text-xs">
-              {isCredit ? 'Crédito' : 'Mensal'}
+              {isCredit ? t('Crédito') : t('Mensal')}
             </span>
           )}
         </div>
@@ -338,34 +396,44 @@ function PlanCard({
               {formatCurrency(plan.price)}
             </span>
             {plan.duration_days ? (
-              <span className="text-xs text-gray-500 sm:text-sm">/ {plan.duration_days} dias</span>
+              <span className="text-xs text-gray-500 sm:text-sm">
+                / {plan.duration_days} {t('dias')}
+              </span>
             ) : isCredit ? (
-              <span className="text-xs text-gray-500 sm:text-sm">/ pacote</span>
+              <span className="text-xs text-gray-500 sm:text-sm">
+                {t('/ pacote')}
+              </span>
             ) : null}
           </div>
         </div>
 
         {plan.description && (
-          <p className="mt-4 text-sm leading-relaxed text-gray-400 sm:mt-6">{plan.description}</p>
+          <p className="mt-4 text-sm leading-relaxed text-gray-400 sm:mt-6">
+            {plan.description}
+          </p>
         )}
 
         <ul className="mt-4 space-y-2.5 sm:mt-6 sm:space-y-3">
           {plan.login_limit ? (
-            <PlanFeature>Limite de {plan.login_limit} logins</PlanFeature>
+            <PlanFeature>
+              {t('Limite de')} {plan.login_limit} {t('logins')}
+            </PlanFeature>
           ) : null}
           {plan.credit_amount ? (
-            <PlanFeature>{plan.credit_amount} créditos inclusos</PlanFeature>
+            <PlanFeature>
+              {plan.credit_amount} {t('créditos inclusos')}
+            </PlanFeature>
           ) : null}
           {isCredit ? (
             <>
-              <PlanFeature>Gestão via bot Telegram</PlanFeature>
-              <PlanFeature>Painel web incluso</PlanFeature>
+              <PlanFeature>{t('Gestão via bot Telegram')}</PlanFeature>
+              <PlanFeature>{t('Painel web incluso')}</PlanFeature>
             </>
           ) : (
             <>
-              <PlanFeature>Painel web completo</PlanFeature>
-              <PlanFeature>Suporte SSH e V2Ray</PlanFeature>
-              <PlanFeature>Credenciais na hora</PlanFeature>
+              <PlanFeature>{t('Painel web completo')}</PlanFeature>
+              <PlanFeature>{t('Suporte SSH e V2Ray')}</PlanFeature>
+              <PlanFeature>{t('Credenciais na hora')}</PlanFeature>
             </>
           )}
         </ul>
@@ -379,8 +447,7 @@ function PlanCard({
               className="btn-primary w-full py-3 text-sm sm:py-3.5 sm:text-base"
             >
               <Bot className="h-4 w-4" />
-              Comprar via Bot
-              <ExternalLink className="h-3.5 w-3.5" />
+              {t('Comprar via Bot')} <ExternalLink className="h-3.5 w-3.5" />
             </a>
           ) : (
             <button
@@ -388,7 +455,7 @@ function PlanCard({
               className="btn-primary w-full py-3 text-sm sm:py-3.5 sm:text-base"
             >
               <ShoppingCart className="h-4 w-4" />
-              Comprar Agora
+              {t('Comprar Agora')}
             </button>
           )}
         </div>

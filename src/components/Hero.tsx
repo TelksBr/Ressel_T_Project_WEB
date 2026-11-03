@@ -1,4 +1,14 @@
-import { ChevronRight, PlayCircle, DollarSign, Shield, Lock, Zap, FlaskConical } from 'lucide-react';
+import { formatCurrency } from '../lib/format';
+import { t } from '../lib/i18n';
+import {
+  ChevronRight,
+  PlayCircle,
+  DollarSign,
+  Shield,
+  Lock,
+  Zap,
+  FlaskConical,
+} from 'lucide-react';
 import { scrollToSection } from '../lib/scroll';
 
 export function Hero() {
@@ -8,27 +18,28 @@ export function Hero() {
         <div className="animate-fade-up min-w-0 text-center lg:text-left">
           <div className="section-badge mb-4 sm:mb-6">
             <Zap className="h-3.5 w-3.5" />
-            Plataforma #1 para Revendedores
+            {t('Plataforma #1 para Revendedores')}
           </div>
 
           <h1 className="font-display text-3xl font-extrabold leading-[1.15] tracking-tight text-white sm:text-4xl md:text-5xl lg:text-[3.25rem]">
-            Seja um{' '}
-            <span className="gradient-text">revendedor VPN</span>{' '}
-            com qualidade premium
+            {t('Seja um')}{' '}
+            <span className="gradient-text">{t('revendedor VPN')}</span>{' '}
+            {t('com qualidade premium')}
           </h1>
 
           <p className="mt-4 text-base leading-relaxed text-gray-400 sm:mt-6 sm:text-lg lg:text-xl">
-            Painel web fluido e otimizado para gerenciar clientes. App leve com suporte
-            a SSH e V2Ray — tudo que você precisa para escalar seu negócio.
+            {t(
+              'Painel web fluido e otimizado para gerenciar clientes. App leve com suporte a SSH e V2Ray — tudo que você precisa para escalar seu negócio.',
+            )}
           </p>
 
           <div className="relative z-[2] mt-6 flex w-full flex-col gap-3 sm:mt-8 sm:w-auto sm:flex-row sm:justify-center lg:justify-start">
             <button
               onClick={() => scrollToSection('planos')}
               className="btn-primary w-full px-6 py-3.5 sm:w-auto sm:px-8"
-              aria-label="Ver planos disponíveis"
+              aria-label={t('Ver planos disponíveis')}
             >
-              Começar Agora
+              {t('Começar Agora')}{' '}
               <ChevronRight className="h-5 w-5" aria-hidden="true" />
             </button>
             <button
@@ -36,26 +47,26 @@ export function Hero() {
               className="btn-secondary w-full px-6 py-3.5 sm:w-auto sm:px-8"
             >
               <FlaskConical className="h-5 w-5" aria-hidden="true" />
-              Teste Grátis
+              {t('Teste Grátis')}
             </button>
             <a
               href="https://play.google.com/store/apps/details?id=app.reselltproject"
               target="_blank"
               rel="noopener noreferrer"
               className="btn-secondary w-full px-6 py-3.5 sm:w-auto sm:px-8"
-              aria-label="Baixar aplicativo na Play Store"
+              aria-label={t('Baixar aplicativo na Play Store')}
             >
               <PlayCircle className="h-5 w-5" aria-hidden="true" />
-              Download App
+              {t('Download App')}
             </a>
           </div>
 
           <div className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-6 lg:justify-start">
-            <Stat label="A partir de" value="R$ 3,00" />
+            <Stat label={t('A partir de')} value={formatCurrency(3)} />
             <div className="hidden h-8 w-px bg-white/10 sm:block" />
-            <Stat label="Protocolos" value="SSH + V2Ray" />
+            <Stat label={t('Protocolos')} value={t('SSH + V2Ray')} />
             <div className="hidden h-8 w-px bg-white/10 sm:block" />
-            <Stat label="Suporte" value="24/7" />
+            <Stat label={t('Suporte')} value="24/7" />
           </div>
         </div>
 
@@ -64,13 +75,13 @@ export function Hero() {
             <div className="card-content grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
               <FeatureMini
                 icon={Shield}
-                title="Sempre Atualizado"
-                description="Métodos e protocolos mais recentes do mercado"
+                title={t('Sempre Atualizado')}
+                description={t('Métodos e protocolos mais recentes do mercado')}
               />
               <FeatureMini
                 icon={Lock}
-                title="Privacidade"
-                description="Navegação anônima e segura garantida"
+                title={t('Privacidade')}
+                description={t('Navegação anônima e segura garantida')}
               />
             </div>
 
@@ -80,10 +91,14 @@ export function Hero() {
                   <DollarSign className="h-6 w-6" />
                 </div>
                 <div className="min-w-0">
-                  <p className="font-display text-base font-bold text-white sm:text-xl">Preços Acessíveis</p>
+                  <p className="font-display text-base font-bold text-white sm:text-xl">
+                    {t('Preços Acessíveis')}
+                  </p>
                   <p className="mt-1 text-sm text-gray-400">
-                    Comece a revender a partir de{' '}
-                    <span className="font-semibold text-accent-gold">R$ 3,00</span>
+                    {t('Comece a revender a partir de')}{' '}
+                    <span className="font-semibold text-accent-gold">
+                      {formatCurrency(3)}
+                    </span>
                   </p>
                 </div>
               </div>
@@ -99,7 +114,9 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 sm:block sm:border-0 sm:bg-transparent sm:p-0 sm:text-center lg:text-left">
       <p className="text-xs text-gray-500">{label}</p>
-      <p className="font-display text-lg font-bold text-white sm:text-2xl">{value}</p>
+      <p className="font-display text-lg font-bold text-white sm:text-2xl">
+        {value}
+      </p>
     </div>
   );
 }
@@ -118,8 +135,12 @@ function FeatureMini({
       <div className="icon-box mb-3 h-12 w-12">
         <Icon className="h-5 w-5" />
       </div>
-      <h2 className="font-display text-base font-bold text-white sm:text-lg">{title}</h2>
-      <p className="mt-1.5 text-sm leading-relaxed text-gray-400">{description}</p>
+      <h2 className="font-display text-base font-bold text-white sm:text-lg">
+        {title}
+      </h2>
+      <p className="mt-1.5 text-sm leading-relaxed text-gray-400">
+        {description}
+      </p>
     </div>
   );
 }

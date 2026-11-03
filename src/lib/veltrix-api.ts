@@ -1,3 +1,4 @@
+import { getLocale, t } from './i18n';
 import { veltrixConfig } from './config';
 import type {
   ApiError,
@@ -36,7 +37,8 @@ function asRecord(value: unknown): Record<string, unknown> {
 function firstString(...values: unknown[]): string {
   for (const value of values) {
     if (typeof value === 'string' && value.length > 0) return value;
-    if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+    if (typeof value === 'number' && Number.isFinite(value))
+      return String(value);
   }
   return '';
 }
@@ -65,6 +67,7 @@ export function getErrorMessage(err: unknown, fallback: string): string {
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     Accept: 'application/json',
+    'Accept-Language': getLocale(),
     ...(options.headers as Record<string, string>),
   };
 
@@ -82,9 +85,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   } catch {
     throw new VeltrixApiError(
       import.meta.env.DEV
-        ? 'Falha ao conectar com a API. Verifique se o servidor de desenvolvimento está rodando.'
-        : 'Falha ao conectar com a API. Verifique a URL e as permissões CORS.',
-      0
+        ? t(
+            'Falha ao conectar com a API. Verifique se o servidor de desenvolvimento está rodando.',
+          )
+        : t(
+            'Falha ao conectar com a API. Verifique a URL e as permissões CORS.',
+          ),
+      0,
     );
   }
 
@@ -103,21 +110,23 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   const failure =
     !response.ok ||
-    (data !== null && typeof data === 'object' && asRecord(data).success === false);
+    (data !== null &&
+      typeof data === 'object' &&
+      asRecord(data).success === false);
 
   if (failure) {
     const fallback = response.ok
-      ? 'Não foi possível concluir a operação.'
-      : `Erro na API (${response.status})`;
+      ? t('Não foi possível concluir a operação.')
+      : t('Erro na API ({status})', { status: response.status });
     throw new VeltrixApiError(
       extractApiErrorMessage(data, fallback),
       response.status,
-      (data as ApiError | null) ?? undefined
+      (data as ApiError | null) ?? undefined,
     );
   }
 
   if (data === null && text && !text.startsWith('<')) {
-    throw new VeltrixApiError('Resposta inválida da API.', response.status);
+    throw new VeltrixApiError(t('Resposta inválida da API.'), response.status);
   }
 
   return (data ?? ({} as T)) as T;
@@ -132,7 +141,10 @@ function testSlugPath(suffix: string) {
 }
 
 function normalizeTestConfig(data: unknown): TestConfig {
-  const root = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+  const root = (data && typeof data === 'object' ? data : {}) as Record<
+    string,
+    unknown
+  >;
   const raw = (root.data ?? root) as Record<string, unknown>;
 
   return {
@@ -142,7 +154,7 @@ function normalizeTestConfig(data: unknown): TestConfig {
     include_v2ray: Boolean(raw.include_v2ray),
     trusted_email_domains: Array.isArray(raw.trusted_email_domains)
       ? (raw.trusted_email_domains as unknown[]).filter(
-          (d): d is string => typeof d === 'string' && d.length > 0
+          (d): d is string => typeof d === 'string' && d.length > 0,
         )
       : [],
     seller: raw.seller as TestConfig['seller'],
@@ -160,7 +172,7 @@ function normalizePlan(raw: Record<string, unknown>): ResellerPlan | null {
 
   return {
     id,
-    name: String(raw.name ?? 'Plano'),
+    name: String(raw.name ?? t('Plano')),
     description: raw.description ? String(raw.description) : undefined,
     price: Number(raw.price ?? 0),
     duration_days: Number(raw.duration_days) || undefined,
@@ -187,7 +199,9 @@ function normalizePlans(data: unknown): ResellerPlan[] {
     .filter((plan): plan is ResellerPlan => plan !== null);
 }
 
-function normalizePaymentMethod(raw: Record<string, unknown>): PaymentMethod | null {
+function normalizePaymentMethod(
+  raw: Record<string, unknown>,
+): PaymentMethod | null {
   const gateway = asRecord(raw.gateway);
   const gatewayId = Number(raw.gateway_id ?? gateway.id ?? 0);
   const methodId = firstString(raw.method_id);
@@ -203,17 +217,27 @@ function normalizePaymentMethod(raw: Record<string, unknown>): PaymentMethod | n
     name: firstString(raw.name, type),
     method_id: methodId || type,
     selection_key: firstString(raw.selection_key) || `${gatewayId}:${type}`,
-    gateway: Object.keys(gateway).length ? (gateway as PaymentGateway) : undefined,
+    gateway: Object.keys(gateway).length
+      ? (gateway as PaymentGateway)
+      : undefined,
   };
 }
 
 function normalizePaymentMethods(data: unknown): PaymentMethodsResponse {
   const root = asRecord(data);
   const inner = asRecord(root.data);
-  const rawMethods = inner.methods ?? inner.payment_methods ?? root.methods ?? root.payment_methods;
+  const rawMethods =
+    inner.methods ??
+    inner.payment_methods ??
+    root.methods ??
+    root.payment_methods;
   const methods = Array.isArray(rawMethods)
     ? rawMethods
-        .map((item) => (item && typeof item === 'object' ? normalizePaymentMethod(asRecord(item)) : null))
+        .map((item) =>
+          item && typeof item === 'object'
+            ? normalizePaymentMethod(asRecord(item))
+            : null,
+        )
         .filter((method): method is PaymentMethod => method !== null)
     : [];
 
@@ -229,7 +253,12 @@ function extractPixData(data: Record<string, unknown>): PixPaymentData {
   const source = { ...data, ...nested, ...payment };
   const pix = { ...asRecord(source.pix_data), ...asRecord(source.pix) };
 
-  const paymentId = firstString(source.payment_id, source.id, nested.payment_id, payment.payment_id);
+  const paymentId = firstString(
+    source.payment_id,
+    source.id,
+    nested.payment_id,
+    payment.payment_id,
+  );
   const copyPaste = firstString(
     pix.qr_code_text,
     pix.copy_paste,
@@ -237,9 +266,13 @@ function extractPixData(data: Record<string, unknown>): PixPaymentData {
     pix.emv,
     source.qr_code_text,
     source.copy_paste,
-    source.emv
+    source.emv,
   );
-  const qrBase64 = firstString(pix.qr_code_base64, pix.pix_qr_code_base64, source.qr_code_base64);
+  const qrBase64 = firstString(
+    pix.qr_code_base64,
+    pix.pix_qr_code_base64,
+    source.qr_code_base64,
+  );
 
   return {
     payment_id: paymentId,
@@ -252,13 +285,22 @@ function extractPixData(data: Record<string, unknown>): PixPaymentData {
     qr_code_base64: qrBase64,
     copy_paste: copyPaste,
     emv: firstString(pix.emv, copyPaste),
-    expiration: firstString(pix.expires_at, pix.expiration, source.expires_at, source.expiration),
+    expiration: firstString(
+      pix.expires_at,
+      pix.expiration,
+      source.expires_at,
+      source.expiration,
+    ),
     amount: Number(source.amount ?? 0) || undefined,
   };
 }
 
-function extractCredentials(data: PaymentStatusResponse): PaymentStatusResponse['account'] {
-  const nested = asRecord((data as unknown as { data?: unknown }).data) as PaymentStatusResponse;
+function extractCredentials(
+  data: PaymentStatusResponse,
+): PaymentStatusResponse['account'] {
+  const nested = asRecord(
+    (data as unknown as { data?: unknown }).data,
+  ) as PaymentStatusResponse;
   const account =
     data.account ??
     data.reseller ??
@@ -270,7 +312,8 @@ function extractCredentials(data: PaymentStatusResponse): PaymentStatusResponse[
   if (account) {
     return {
       ...account,
-      panel_url: account.panel_url ?? account.login_url ?? veltrixConfig.panelUrl,
+      panel_url:
+        account.panel_url ?? account.login_url ?? veltrixConfig.panelUrl,
     };
   }
   return undefined;
@@ -284,20 +327,22 @@ export const veltrixApi = {
 
   async getPaymentMethods(amount?: number): Promise<PaymentMethodsResponse> {
     const query = amount ? `?amount=${amount}` : '';
-    const data = await request<PaymentMethodsResponse>(slugPath(`/payment-methods${query}`));
+    const data = await request<PaymentMethodsResponse>(
+      slugPath(`/payment-methods${query}`),
+    );
     return normalizePaymentMethods(data);
   },
 
   async checkUsername(username: string): Promise<boolean> {
     const data = await request<AvailabilityResponse>(
-      `/public/reseller-sales/check-username?username=${encodeURIComponent(username)}`
+      `/public/reseller-sales/check-username?username=${encodeURIComponent(username)}`,
     );
     return data.available ?? false;
   },
 
   async checkEmail(email: string): Promise<boolean> {
     const data = await request<AvailabilityResponse>(
-      `/public/reseller-sales/check-email?email=${encodeURIComponent(email)}`
+      `/public/reseller-sales/check-email?email=${encodeURIComponent(email)}`,
     );
     return data.available ?? false;
   },
@@ -313,10 +358,12 @@ export const veltrixApi = {
 
   async getPaymentStatus(paymentId: string): Promise<PaymentStatusResponse> {
     const data = await request<Record<string, unknown>>(
-      `/public/payment/${encodeURIComponent(paymentId)}/status`
+      `/public/payment/${encodeURIComponent(paymentId)}/status`,
     );
     const nested = asRecord(data.data);
-    const payload = (nested.status ? { ...data, ...nested } : data) as PaymentStatusResponse;
+    const payload = (
+      nested.status ? { ...data, ...nested } : data
+    ) as PaymentStatusResponse;
 
     return {
       ...payload,
@@ -349,7 +396,8 @@ export const veltrixApi = {
 
     return {
       success: data?.success ?? true,
-      message: data?.message ?? 'Teste criado! Verifique sua caixa de entrada.',
+      message:
+        data?.message ?? t('Teste criado! Verifique sua caixa de entrada.'),
     };
   },
 };

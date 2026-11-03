@@ -1,47 +1,54 @@
+import { t } from '../lib/i18n';
 import { Globe, Info, Send, Layers, ExternalLink } from 'lucide-react';
 import { veltrixConfig } from '../lib/config';
 
 const TELEGRAM_BOT_URL = 'https://t.me/ssh_t_project_vip_bot';
 
-const channels = [
-  {
-    icon: Send,
-    title: 'Telegram Bot',
-    description: 'Revenda e gerencie seus clientes via Telegram — rápido, prático e automatizado.',
-    note: 'Disponível na modalidade crédito. Acesse o bot para contratar e gerenciar.',
-    accent: 'from-sky-500/20 to-blue-600/5',
-    iconColor: 'text-sky-400',
-    borderColor: 'hover:border-sky-500/30',
-    href: TELEGRAM_BOT_URL,
-    cta: 'Abrir @ssh_t_project_vip_bot',
-    featured: true,
-  },
-  {
-    icon: Globe,
-    title: 'Painel Web',
-    description: 'Interface web completa, intuitiva e otimizada para desktop e mobile.',
-    note: 'Disponível em todas as modalidades',
-    accent: 'from-brand-500/20 to-brand-700/5',
-    iconColor: 'text-brand-400',
-    borderColor: 'hover:border-brand-500/30',
-    href: veltrixConfig.panelUrl,
-    cta: 'Acessar Painel',
-  },
-];
-
 export function Management() {
+  const channels = [
+    {
+      icon: Send,
+      title: t('Telegram Bot'),
+      description: t(
+        'Revenda e gerencie seus clientes via Telegram — rápido, prático e automatizado.',
+      ),
+      note: t(
+        'Disponível na modalidade crédito. Acesse o bot para contratar e gerenciar.',
+      ),
+      accent: 'from-sky-500/20 to-blue-600/5',
+      iconColor: 'text-sky-400',
+      borderColor: 'hover:border-sky-500/30',
+      href: TELEGRAM_BOT_URL,
+      cta: t('Abrir @ssh_t_project_vip_bot'),
+      featured: true,
+    },
+    {
+      icon: Globe,
+      title: t('Painel Web'),
+      description: t(
+        'Interface web completa, intuitiva e otimizada para desktop e mobile.',
+      ),
+      note: t('Disponível em todas as modalidades'),
+      accent: 'from-brand-500/20 to-brand-700/5',
+      iconColor: 'text-brand-400',
+      borderColor: 'hover:border-brand-500/30',
+      href: veltrixConfig.panelUrl,
+      cta: t('Acessar Painel'),
+    },
+  ];
   return (
     <section className="section-anchor container mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-24">
       <div className="text-center">
         <div className="section-badge mb-4">
           <Layers className="h-3.5 w-3.5" />
-          Gerenciamento
+          {t('Gerenciamento')}
         </div>
         <h2 className="section-title">
-          Controle total, <span className="gradient-text">do seu jeito</span>
+          {t('Controle total,')}{' '}
+          <span className="gradient-text">{t('do seu jeito')}</span>
         </h2>
         <p className="section-subtitle">
-          Painel web ou revenda automatizada pelo bot oficial no Telegram
+          {t('Painel web ou revenda automatizada pelo bot oficial no Telegram')}
         </p>
         <div className="divider-glow mt-6" />
       </div>
@@ -59,7 +66,7 @@ export function Management() {
             <div className="card-content relative z-[1] flex h-full flex-col">
               {channel.featured && (
                 <span className="mb-4 inline-flex w-fit rounded-full border border-sky-400/30 bg-sky-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-sky-300">
-                  Revenda via Bot
+                  {t('Revenda via Bot')}
                 </span>
               )}
 
@@ -67,12 +74,18 @@ export function Management() {
                 <channel.icon className={`h-6 w-6 ${channel.iconColor}`} />
               </div>
 
-              <h3 className="font-display text-xl font-bold text-white">{channel.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-gray-400">{channel.description}</p>
+              <h3 className="font-display text-xl font-bold text-white">
+                {channel.title}
+              </h3>
+              <p className="mt-3 text-sm leading-relaxed text-gray-400">
+                {channel.description}
+              </p>
 
               <div className="mt-6 flex items-start gap-2 rounded-lg border border-white/[0.06] bg-white/[0.03] p-3">
                 <Info className="mt-0.5 h-4 w-4 shrink-0 text-brand-400" />
-                <p className="text-xs leading-relaxed text-gray-400">{channel.note}</p>
+                <p className="text-xs leading-relaxed text-gray-400">
+                  {channel.note}
+                </p>
               </div>
 
               <a

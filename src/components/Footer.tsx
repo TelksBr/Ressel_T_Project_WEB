@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { Shield, Heart } from 'lucide-react';
 
 export function Footer() {
@@ -14,17 +15,23 @@ export function Footer() {
               <Shield className="h-5 w-5 text-brand-300" />
             </div>
             <div>
-              <span className="font-display text-lg font-bold text-white">Resell T Project</span>
-              <p className="text-xs text-gray-500">Revenda VPN Premium</p>
+              <span className="font-display text-lg font-bold text-white">
+                Resell T Project
+              </span>
+              <p className="text-xs text-gray-500">
+                {t('Revenda VPN Premium')}
+              </p>
             </div>
           </div>
 
           <div className="flex flex-col items-center gap-1 md:items-end">
             <p className="text-sm text-gray-500">
-              © {currentYear} Resell T Project. Todos os direitos reservados.
+              © {currentYear}{' '}
+              {t('Resell T Project. Todos os direitos reservados.')}
             </p>
             <p className="flex items-center gap-1 text-xs text-gray-600">
-              Criado com <Heart className="h-3 w-3 text-brand-500" /> por SSH T Project
+              {t('Criado com')} <Heart className="h-3 w-3 text-brand-500" />{' '}
+              {t('por SSH T Project')}
             </p>
           </div>
         </div>

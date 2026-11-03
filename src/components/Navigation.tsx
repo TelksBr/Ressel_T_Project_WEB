@@ -1,15 +1,16 @@
+import { LanguageSelector } from './LanguageSelector';
+import { t } from '../lib/i18n';
 import { useState } from 'react';
 import { Shield, Menu, X, Sparkles } from 'lucide-react';
 import { scrollToSection } from '../lib/scroll';
 import { veltrixConfig } from '../lib/config';
 
-const navLinks = [
-  { id: 'planos', label: 'Planos' },
-  { id: 'teste', label: 'Teste Grátis' },
-  { id: 'contato', label: 'Contato' },
-];
-
 export function Navigation() {
+  const navLinks = [
+    { id: 'planos', label: t('Planos') },
+    { id: 'teste', label: t('Teste Grátis') },
+    { id: 'contato', label: t('Contato') },
+  ];
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const goTo = (id: string) => {
@@ -42,7 +43,7 @@ export function Navigation() {
             </div>
           </a>
 
-          <div className="hidden items-center gap-6 md:flex">
+          <div className="hidden items-center gap-6 lg:flex">
             {navLinks.map((link) => (
               <button
                 key={link.id}
@@ -54,30 +55,38 @@ export function Navigation() {
             ))}
           </div>
 
+          <LanguageSelector />
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="rounded-lg p-2.5 text-gray-300 transition hover:bg-white/5 hover:text-white md:hidden"
-            aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+            className="rounded-lg p-2.5 text-gray-300 transition hover:bg-white/5 hover:text-white lg:hidden"
+            aria-label={isMenuOpen ? t('Fechar menu') : t('Abrir menu')}
           >
-            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {isMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
           </button>
 
-          <div className="hidden items-center gap-3 md:flex">
-            <button onClick={() => goTo('planos')} className="btn-primary px-5 py-2.5 text-sm">
+          <div className="hidden items-center gap-3 lg:flex">
+            <button
+              onClick={() => goTo('planos')}
+              className="btn-primary px-5 py-2.5 text-sm"
+            >
               <Sparkles className="h-4 w-4" />
-              Começar Agora
+              {t('Começar Agora')}
             </button>
             <a
               href={veltrixConfig.panelUrl}
               className="btn-secondary px-5 py-2.5 text-sm"
             >
-              Painel de Login
+              {t('Painel de Login')}
             </a>
           </div>
         </div>
 
         {isMenuOpen && (
-          <div className="border-t border-white/[0.06] pb-4 pt-3 md:hidden">
+          <div className="border-t border-white/[0.06] pb-4 pt-3 lg:hidden">
             <div className="mb-3 flex flex-col gap-1">
               {navLinks.map((link) => (
                 <button
@@ -90,15 +99,18 @@ export function Navigation() {
               ))}
             </div>
             <div className="flex flex-col gap-2">
-              <button onClick={() => goTo('planos')} className="btn-primary w-full py-3 text-sm">
+              <button
+                onClick={() => goTo('planos')}
+                className="btn-primary w-full py-3 text-sm"
+              >
                 <Sparkles className="h-4 w-4" />
-                Começar Agora
+                {t('Começar Agora')}
               </button>
               <a
                 href={veltrixConfig.panelUrl}
                 className="btn-secondary w-full py-3 text-center text-sm"
               >
-                Painel de Login
+                {t('Painel de Login')}
               </a>
             </div>
           </div>

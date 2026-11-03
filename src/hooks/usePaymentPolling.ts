@@ -1,6 +1,10 @@
+import { t } from '../lib/i18n';
 import { useEffect, useRef, useState } from 'react';
 import { veltrixApi } from '../lib/veltrix-api';
-import type { PaymentStatusResponse, ResellerCredentials } from '../types/veltrix';
+import type {
+  PaymentStatusResponse,
+  ResellerCredentials,
+} from '../types/veltrix';
 
 interface UsePaymentPollingOptions {
   paymentId: string | null;
@@ -19,9 +23,12 @@ export function usePaymentPolling({
   onApproved,
   onRejected,
 }: UsePaymentPollingOptions) {
-  const [status, setStatus] = useState<PaymentStatusResponse['status']>('pending');
+  const [status, setStatus] =
+    useState<PaymentStatusResponse['status']>('pending');
   const [provisioning, setProvisioning] = useState(false);
-  const [credentials, setCredentials] = useState<ResellerCredentials | undefined>();
+  const [credentials, setCredentials] = useState<
+    ResellerCredentials | undefined
+  >();
   const [error, setError] = useState<string | null>(null);
   const attemptsRef = useRef(0);
   const callbacksRef = useRef({ onApproved, onRejected });
@@ -64,7 +71,7 @@ export function usePaymentPolling({
 
         attemptsRef.current += 1;
         if (attemptsRef.current >= maxAttempts) {
-          setError('Tempo esgotado aguardando confirmação do pagamento.');
+          setError(t('Tempo esgotado aguardando confirmação do pagamento.'));
           return;
         }
 
@@ -74,7 +81,11 @@ export function usePaymentPolling({
         attemptsRef.current += 1;
 
         if (attemptsRef.current >= maxAttempts) {
-          setError(err instanceof Error ? err.message : 'Erro ao verificar pagamento.');
+          setError(
+            err instanceof Error
+              ? err.message
+              : t('Erro ao verificar pagamento.'),
+          );
           return;
         }
 

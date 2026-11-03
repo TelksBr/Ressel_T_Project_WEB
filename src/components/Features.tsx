@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import {
   Server,
   GamepadIcon,
@@ -8,40 +9,39 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-const features = [
-  {
-    icon: Server,
-    title: 'Servidor BR',
-    description: 'Servidores de alta performance localizados no Brasil',
-  },
-  {
-    icon: GamepadIcon,
-    title: 'Suporte Jogos',
-    description: 'Otimizado para jogos online e chamadas de voz',
-  },
-  {
-    icon: Globe,
-    title: 'CloudFront',
-    description: 'CDN global para máximo desempenho e estabilidade',
-  },
-  {
-    icon: PlayCircle,
-    title: 'Streaming',
-    description: 'Perfeito para streaming de conteúdo em alta qualidade',
-  },
-  {
-    icon: Smartphone,
-    title: 'App na Play Store',
-    description: 'Aplicativo oficial disponível para Android',
-  },
-  {
-    icon: Zap,
-    title: 'Sempre Atualizado',
-    description: 'Métodos e sistemas sempre na versão mais recente',
-  },
-];
-
 export function Features() {
+  const features = [
+    {
+      icon: Server,
+      title: t('Servidor BR'),
+      description: t('Servidores de alta performance localizados no Brasil'),
+    },
+    {
+      icon: GamepadIcon,
+      title: t('Suporte Jogos'),
+      description: t('Otimizado para jogos online e chamadas de voz'),
+    },
+    {
+      icon: Globe,
+      title: 'CloudFront',
+      description: t('CDN global para máximo desempenho e estabilidade'),
+    },
+    {
+      icon: PlayCircle,
+      title: 'Streaming',
+      description: t('Perfeito para streaming de conteúdo em alta qualidade'),
+    },
+    {
+      icon: Smartphone,
+      title: t('App na Play Store'),
+      description: t('Aplicativo oficial disponível para Android'),
+    },
+    {
+      icon: Zap,
+      title: t('Sempre Atualizado'),
+      description: t('Métodos e sistemas sempre na versão mais recente'),
+    },
+  ];
   return (
     <section className="section-anchor container mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-24">
       <div className="glass-card premium-border overflow-hidden">
@@ -49,16 +49,19 @@ export function Features() {
           <div className="absolute -right-20 -top-20 h-60 w-60 rounded-full bg-brand-600/10 blur-3xl" />
           <div className="absolute -bottom-20 -left-20 h-60 w-60 rounded-full bg-accent-cyan/5 blur-3xl" />
 
-            <div className="relative z-10 text-center">
+          <div className="relative z-10 text-center">
             <div className="section-badge mb-4">
               <Sparkles className="h-3.5 w-3.5" />
-              Recursos
+              {t('Recursos')}
             </div>
             <h2 className="section-title">
-              Tudo incluso, <span className="gradient-text">sem surpresas</span>
+              {t('Tudo incluso,')}{' '}
+              <span className="gradient-text">{t('sem surpresas')}</span>
             </h2>
             <p className="section-subtitle">
-              Infraestrutura robusta para entregar a melhor experiência aos seus clientes
+              {t(
+                'Infraestrutura robusta para entregar a melhor experiência aos seus clientes',
+              )}
             </p>
             <div className="divider-glow mt-6" />
           </div>
@@ -74,7 +77,9 @@ export function Features() {
                   <feature.icon className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-display font-bold text-white">{feature.title}</h3>
+                  <h3 className="font-display font-bold text-white">
+                    {feature.title}
+                  </h3>
                   <p className="mt-1.5 text-sm leading-relaxed text-gray-400">
                     {feature.description}
                   </p>

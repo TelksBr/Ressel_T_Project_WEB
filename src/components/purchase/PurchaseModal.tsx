@@ -1,3 +1,4 @@
+import { t } from '../../lib/i18n';
 import { useCallback, useEffect, useState, type ComponentType } from 'react';
 import {
   ArrowLeft,
@@ -51,14 +52,13 @@ const initialForm = (plan: ResellerPlan): PurchaseFormData => ({
   paymentMethod: null,
 });
 
-const steps: { key: PurchaseStep; label: string }[] = [
-  { key: 'credentials', label: 'Conta' },
-  { key: 'payment', label: 'Pagamento' },
-  { key: 'pix', label: 'PIX' },
-  { key: 'success', label: 'Concluído' },
-];
-
 export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
+  const steps: { key: PurchaseStep; label: string }[] = [
+    { key: 'credentials', label: t('Conta') },
+    { key: 'payment', label: t('Pagamento') },
+    { key: 'pix', label: 'PIX' },
+    { key: 'success', label: t('Concluído') },
+  ];
   const [step, setStep] = useState<PurchaseStep>('credentials');
   useBodyScrollLock(true);
   const [form, setForm] = useState<PurchaseFormData>(() => initialForm(plan));
@@ -66,12 +66,23 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
   const [loadingMethods, setLoadingMethods] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pixData, setPixData] = useState<{ paymentId: string; qrBase64?: string; copyPaste?: string } | null>(null);
-  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
-  const [emailStatus, setEmailStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+  const [pixData, setPixData] = useState<{
+    paymentId: string;
+    qrBase64?: string;
+    copyPaste?: string;
+  } | null>(null);
+  const [usernameStatus, setUsernameStatus] = useState<
+    'idle' | 'checking' | 'available' | 'taken'
+  >('idle');
+  const [emailStatus, setEmailStatus] = useState<
+    'idle' | 'checking' | 'available' | 'taken'
+  >('idle');
   const [copied, setCopied] = useState(false);
 
-  const updateForm = <K extends keyof PurchaseFormData>(key: K, value: PurchaseFormData[K]) => {
+  const updateForm = <K extends keyof PurchaseFormData>(
+    key: K,
+    value: PurchaseFormData[K],
+  ) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setError(null);
   };
@@ -143,43 +154,57 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
         setForm((prev) => ({ ...prev, paymentMethod: methods[0] ?? null }));
 
         if (methods.length === 0) {
-          setError('Nenhum método PIX disponível para este plano.');
+          setError(t('Nenhum método PIX disponível para este plano.'));
         }
       })
-      .catch((err) => setError(getErrorMessage(err, 'Não foi possível carregar os métodos de pagamento.')))
+      .catch((err) =>
+        setError(
+          getErrorMessage(
+            err,
+            t('Não foi possível carregar os métodos de pagamento.'),
+          ),
+        ),
+      )
       .finally(() => setLoadingMethods(false));
   }, [step, plan.price]);
 
-  const { status: paymentStatus, provisioning, credentials, error: pollingError } = usePaymentPolling({
+  const {
+    status: paymentStatus,
+    provisioning,
+    credentials,
+    error: pollingError,
+  } = usePaymentPolling({
     paymentId: pixData?.paymentId ?? null,
     enabled: step === 'pix' && Boolean(pixData?.paymentId),
     onApproved: () => setStep('success'),
-    onRejected: (msg) => setError(msg ?? 'Pagamento recusado ou cancelado.'),
+    onRejected: (msg) => setError(msg ?? t('Pagamento recusado ou cancelado.')),
   });
 
   const validateCredentials = (): boolean => {
     if (!/^[a-zA-Z0-9]{3,32}$/.test(form.resellerUsername)) {
-      setError('Username deve ter 3 a 32 caracteres, apenas letras e números.');
+      setError(
+        t('Username deve ter 3 a 32 caracteres, apenas letras e números.'),
+      );
       return false;
     }
     if (usernameStatus === 'checking' || emailStatus === 'checking') {
-      setError('Aguarde a verificação do username e e-mail.');
+      setError(t('Aguarde a verificação do username e e-mail.'));
       return false;
     }
     if (usernameStatus === 'taken') {
-      setError('Este username já está em uso.');
+      setError(t('Este username já está em uso.'));
       return false;
     }
     if (!isValidEmail(form.resellerEmail)) {
-      setError('Informe um e-mail válido para a conta de revenda.');
+      setError(t('Informe um e-mail válido para a conta de revenda.'));
       return false;
     }
     if (emailStatus === 'taken') {
-      setError('Este e-mail já está em uso.');
+      setError(t('Este e-mail já está em uso.'));
       return false;
     }
     if (form.resellerPassword.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres.');
+      setError(t('A senha deve ter pelo menos 6 caracteres.'));
       return false;
     }
     return true;
@@ -187,19 +212,19 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
 
   const validatePayment = (): boolean => {
     if (!form.customerName.trim()) {
-      setError('Informe seu nome completo.');
+      setError(t('Informe seu nome completo.'));
       return false;
     }
     if (!isValidEmail(form.customerEmail)) {
-      setError('Informe um e-mail válido.');
+      setError(t('Informe um e-mail válido.'));
       return false;
     }
     if (!isValidCpf(form.customerCpf)) {
-      setError('Informe um CPF válido.');
+      setError(t('Informe um CPF válido.'));
       return false;
     }
     if (!form.paymentMethod) {
-      setError('Selecione um método de pagamento.');
+      setError(t('Selecione um método de pagamento.'));
       return false;
     }
     return true;
@@ -215,7 +240,8 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
       const result = await veltrixApi.createPayment({
         plan_id: plan.id,
         gateway_id: form.paymentMethod.gateway_id,
-        payment_method_type: form.paymentMethod.method_id || form.paymentMethod.type,
+        payment_method_type:
+          form.paymentMethod.method_id || form.paymentMethod.type,
         customer_name: form.customerName.trim(),
         customer_email: form.customerEmail.trim(),
         customer_cpf: stripDigits(form.customerCpf),
@@ -227,20 +253,25 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
       });
 
       const qrBase64 = result.pix_qr_code_base64 || result.qr_code_base64;
-      const copyPaste = result.pix_copy_paste || result.copy_paste || result.emv;
+      const copyPaste =
+        result.pix_copy_paste || result.copy_paste || result.emv;
 
       if (!result.payment_id) {
-        throw new Error('Pagamento criado, mas ID não retornado pela API.');
+        throw new Error(t('Pagamento criado, mas ID não retornado pela API.'));
       }
 
       setPixData({
         paymentId: result.payment_id,
-        qrBase64: qrBase64?.startsWith('data:') ? qrBase64 : qrBase64 ? `data:image/png;base64,${qrBase64}` : undefined,
+        qrBase64: qrBase64?.startsWith('data:')
+          ? qrBase64
+          : qrBase64
+            ? `data:image/png;base64,${qrBase64}`
+            : undefined,
         copyPaste,
       });
       setStep('pix');
     } catch (err) {
-      setError(getErrorMessage(err, 'Erro ao processar pagamento.'));
+      setError(getErrorMessage(err, t('Erro ao processar pagamento.')));
     } finally {
       setSubmitting(false);
     }
@@ -273,7 +304,10 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={handleBackdropClick} />
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={handleBackdropClick}
+      />
 
       <div
         role="dialog"
@@ -285,15 +319,22 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
         <div className="flex items-start justify-between gap-3 border-b border-white/[0.06] px-4 py-3.5 sm:px-6 sm:py-4">
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-400 sm:text-xs">
-              Comprar Plano
+              {t('Comprar Plano')}
             </p>
-            <h3 id="purchase-modal-title" className="truncate font-display text-base font-bold text-white sm:text-lg">{plan.name}</h3>
-            <p className="text-sm text-gray-400">{formatCurrency(plan.price)}</p>
+            <h3
+              id="purchase-modal-title"
+              className="truncate font-display text-base font-bold text-white sm:text-lg"
+            >
+              {plan.name}
+            </h3>
+            <p className="text-sm text-gray-400">
+              {formatCurrency(plan.price)}
+            </p>
           </div>
           <button
             onClick={onClose}
             className="rounded-lg p-2 text-gray-400 transition hover:bg-white/5 hover:text-white"
-            aria-label="Fechar"
+            aria-label={t('Fechar')}
           >
             <X className="h-5 w-5" />
           </button>
@@ -303,11 +344,15 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
         {step !== 'success' && (
           <>
             <p className="border-b border-white/[0.06] px-4 py-2 text-center text-[11px] text-gray-500 sm:hidden">
-              Passo {currentStepIndex + 1} de 3 — {steps[currentStepIndex]?.label}
+              {t('Passo')} {currentStepIndex + 1} {t('de 3 —')}{' '}
+              {steps[currentStepIndex]?.label}
             </p>
             <div className="flex items-center gap-1 border-b border-white/[0.06] px-3 py-2.5 sm:gap-2 sm:px-6 sm:py-3">
               {steps.slice(0, 3).map((s, i) => (
-                <div key={s.key} className="flex flex-1 items-center gap-1 sm:gap-2">
+                <div
+                  key={s.key}
+                  className="flex flex-1 items-center gap-1 sm:gap-2"
+                >
                   <div
                     className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition sm:h-7 sm:w-7 sm:text-xs ${
                       i < currentStepIndex
@@ -317,9 +362,15 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
                           : 'border border-white/10 text-gray-500'
                     }`}
                   >
-                    {i < currentStepIndex ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                    {i < currentStepIndex ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : (
+                      i + 1
+                    )}
                   </div>
-                  <span className={`hidden text-xs sm:block ${i === currentStepIndex ? 'text-white' : 'text-gray-500'}`}>
+                  <span
+                    className={`hidden text-xs sm:block ${i === currentStepIndex ? 'text-white' : 'text-gray-500'}`}
+                  >
                     {s.label}
                   </span>
                   {i < 2 && <div className="mx-1 h-px flex-1 bg-white/10" />}
@@ -331,7 +382,7 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
 
         {error && (
           <div className="border-b border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300 sm:px-6">
-            {error}
+            {t(error)}
           </div>
         )}
 
@@ -341,45 +392,58 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
           {step === 'credentials' && (
             <div className="space-y-5">
               <div>
-                <h4 className="font-display text-xl font-bold text-white">Credenciais do Painel</h4>
+                <h4 className="font-display text-xl font-bold text-white">
+                  {t('Credenciais do Painel')}
+                </h4>
                 <p className="mt-1 text-sm text-gray-400">
-                  Defina o usuário e senha que você usará para acessar o painel de revenda.
+                  {t(
+                    'Defina o usuário e senha que você usará para acessar o painel de revenda.',
+                  )}
                 </p>
               </div>
 
               <div className="space-y-4">
-                <Field label="Username" icon={User}>
+                <Field label={t('Username')} icon={User}>
                   <input
                     type="text"
                     value={form.resellerUsername}
                     onChange={(e) =>
-                      updateForm('resellerUsername', e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 32))
+                      updateForm(
+                        'resellerUsername',
+                        e.target.value
+                          .replace(/[^a-zA-Z0-9]/g, '')
+                          .slice(0, 32),
+                      )
                     }
-                    placeholder="seurevenda"
+                    placeholder={t('seurevenda')}
                     className="input-field"
                     autoComplete="username"
                   />
                   <AvailabilityHint status={usernameStatus} />
                 </Field>
 
-                <Field label="E-mail da conta" icon={Mail}>
+                <Field label={t('E-mail da conta')} icon={Mail}>
                   <input
                     type="email"
                     value={form.resellerEmail}
-                    onChange={(e) => updateForm('resellerEmail', e.target.value)}
-                    placeholder="revenda@email.com"
+                    onChange={(e) =>
+                      updateForm('resellerEmail', e.target.value)
+                    }
+                    placeholder={t('revenda@email.com')}
                     className="input-field"
                     autoComplete="email"
                   />
                   <AvailabilityHint status={emailStatus} />
                 </Field>
 
-                <Field label="Senha" icon={Lock}>
+                <Field label={t('Senha')} icon={Lock}>
                   <input
                     type="password"
                     value={form.resellerPassword}
-                    onChange={(e) => updateForm('resellerPassword', e.target.value)}
-                    placeholder="Mínimo 6 caracteres"
+                    onChange={(e) =>
+                      updateForm('resellerPassword', e.target.value)
+                    }
+                    placeholder={t('Mínimo 6 caracteres')}
                     className="input-field"
                     autoComplete="new-password"
                   />
@@ -388,7 +452,9 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
 
               <div className="rounded-xl border border-brand-500/20 bg-brand-500/5 p-4">
                 <p className="text-xs text-gray-400">
-                  Após a confirmação do pagamento, suas credenciais serão exibidas aqui e enviadas para o e-mail informado.
+                  {t(
+                    'Após a confirmação do pagamento, suas credenciais serão exibidas aqui e enviadas para o e-mail informado.',
+                  )}
                 </p>
               </div>
             </div>
@@ -398,47 +464,60 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
           {step === 'payment' && (
             <div className="space-y-5">
               <div>
-                <h4 className="font-display text-xl font-bold text-white">Dados de Pagamento</h4>
-                <p className="mt-1 text-sm text-gray-400">Informe seus dados para gerar o PIX.</p>
+                <h4 className="font-display text-xl font-bold text-white">
+                  {t('Dados de Pagamento')}
+                </h4>
+                <p className="mt-1 text-sm text-gray-400">
+                  {t('Informe seus dados para gerar o PIX.')}
+                </p>
               </div>
 
               <div className="space-y-4">
-                <Field label="Nome completo" icon={User}>
+                <Field label={t('Nome completo')} icon={User}>
                   <input
                     type="text"
                     value={form.customerName}
                     onChange={(e) => updateForm('customerName', e.target.value)}
-                    placeholder="João Silva"
+                    placeholder={t('João Silva')}
                     className="input-field"
                   />
                 </Field>
 
-                <Field label="E-mail" icon={Mail}>
+                <Field label={t('E-mail')} icon={Mail}>
                   <input
                     type="email"
                     value={form.customerEmail}
-                    onChange={(e) => updateForm('customerEmail', e.target.value)}
-                    placeholder="seu@email.com"
+                    onChange={(e) =>
+                      updateForm('customerEmail', e.target.value)
+                    }
+                    placeholder={t('seu@email.com')}
                     className="input-field"
                   />
                 </Field>
 
-                <Field label="CPF" icon={Shield}>
+                <Field label={t('CPF')} icon={Shield}>
                   <input
                     type="text"
                     value={form.customerCpf}
-                    onChange={(e) => updateForm('customerCpf', formatCpf(e.target.value))}
+                    onChange={(e) =>
+                      updateForm('customerCpf', formatCpf(e.target.value))
+                    }
                     placeholder="000.000.000-00"
                     className="input-field"
                     maxLength={14}
                   />
                 </Field>
 
-                <Field label="WhatsApp (opcional)" icon={User}>
+                <Field label={t('WhatsApp (opcional)')} icon={User}>
                   <input
                     type="text"
                     value={form.customerWhatsapp}
-                    onChange={(e) => updateForm('customerWhatsapp', formatPhone(e.target.value))}
+                    onChange={(e) =>
+                      updateForm(
+                        'customerWhatsapp',
+                        formatPhone(e.target.value),
+                      )
+                    }
                     placeholder="+55 (13) 99999-9999"
                     className="input-field"
                   />
@@ -446,14 +525,18 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
               </div>
 
               <div>
-                <p className="mb-3 text-sm font-semibold text-white">Método de pagamento</p>
+                <p className="mb-3 text-sm font-semibold text-white">
+                  {t('Método de pagamento')}
+                </p>
                 {loadingMethods ? (
                   <div className="flex items-center justify-center py-8 text-gray-400">
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Carregando...
+                    {t('Carregando...')}
                   </div>
                 ) : paymentMethods.length === 0 ? (
-                  <p className="text-sm text-gray-500">Nenhum método de pagamento disponível.</p>
+                  <p className="text-sm text-gray-500">
+                    {t('Nenhum método de pagamento disponível.')}
+                  </p>
                 ) : (
                   <div className="grid gap-2">
                     {paymentMethods.map((method) => (
@@ -462,7 +545,8 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
                         type="button"
                         onClick={() => updateForm('paymentMethod', method)}
                         className={`flex items-center justify-between rounded-xl border p-4 text-left transition ${
-                          form.paymentMethod?.gateway_id === method.gateway_id &&
+                          form.paymentMethod?.gateway_id ===
+                            method.gateway_id &&
                           form.paymentMethod?.type === method.type
                             ? 'border-brand-500/50 bg-brand-500/10'
                             : 'border-white/[0.08] bg-white/[0.02] hover:border-white/15'
@@ -483,12 +567,16 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
 
               <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Plano selecionado</span>
+                  <span className="text-gray-400">
+                    {t('Plano selecionado')}
+                  </span>
                   <span className="font-semibold text-white">{plan.name}</span>
                 </div>
                 <div className="mt-2 flex justify-between">
-                  <span className="text-gray-400">Total</span>
-                  <span className="font-display text-xl font-bold text-white">{formatCurrency(plan.price)}</span>
+                  <span className="text-gray-400">{t('Total')}</span>
+                  <span className="font-display text-xl font-bold text-white">
+                    {formatCurrency(plan.price)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -501,15 +589,23 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-brand-500/30 bg-brand-500/10">
                   <QrCode className="h-7 w-7 text-brand-300" />
                 </div>
-                <h4 className="font-display text-xl font-bold text-white">Pague via PIX</h4>
+                <h4 className="font-display text-xl font-bold text-white">
+                  {t('Pague via PIX')}
+                </h4>
                 <p className="mt-1 text-sm text-gray-400">
-                  Escaneie o QR Code ou copie o código abaixo. A confirmação é automática.
+                  {t(
+                    'Escaneie o QR Code ou copie o código abaixo. A confirmação é automática.',
+                  )}
                 </p>
               </div>
 
               {pixData?.qrBase64 ? (
                 <div className="mx-auto w-fit rounded-2xl border border-white/10 bg-white p-4">
-                  <img src={pixData.qrBase64} alt="QR Code PIX" className="h-48 w-48 sm:h-56 sm:w-56" />
+                  <img
+                    src={pixData.qrBase64}
+                    alt={t('QR Code PIX')}
+                    className="h-48 w-48 sm:h-56 sm:w-56"
+                  />
                 </div>
               ) : (
                 <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03]">
@@ -519,7 +615,9 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
 
               {pixData?.copyPaste && (
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">Pix Copia e Cola</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                    {t('Pix Copia e Cola')}
+                  </p>
                   <div className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-3 sm:flex-row sm:items-center">
                     <p className="flex-1 break-all text-left text-xs leading-relaxed text-gray-300 sm:truncate">
                       {pixData.copyPaste}
@@ -527,9 +625,13 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
                     <button
                       onClick={copyPixCode}
                       className="shrink-0 rounded-lg bg-brand-600 p-2 text-white transition hover:bg-brand-500"
-                      aria-label="Copiar código PIX"
+                      aria-label={t('Copiar código PIX')}
                     >
-                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      {copied ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -538,14 +640,14 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
               <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
                 <Loader2 className="h-4 w-4 animate-spin text-brand-400" />
                 {provisioning
-                  ? 'Pagamento confirmado! Criando sua conta...'
+                  ? t('Pagamento confirmado! Criando sua conta...')
                   : paymentStatus === 'pending'
-                    ? 'Aguardando confirmação do pagamento...'
-                    : 'Verificando pagamento...'}
+                    ? t('Aguardando confirmação do pagamento...')
+                    : t('Verificando pagamento...')}
               </div>
 
               {pollingError && (
-                <p className="text-sm text-red-400">{pollingError}</p>
+                <p className="text-sm text-red-400">{t(pollingError)}</p>
               )}
             </div>
           )}
@@ -558,17 +660,35 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
               </div>
 
               <div>
-                <h4 className="font-display text-2xl font-bold text-white">Compra Confirmada!</h4>
+                <h4 className="font-display text-2xl font-bold text-white">
+                  {t('Compra Confirmada!')}
+                </h4>
                 <p className="mt-2 text-sm text-gray-400">
-                  Suas credenciais de acesso ao painel estão prontas.
+                  {t('Suas credenciais de acesso ao painel estão prontas.')}
                 </p>
               </div>
 
               <div className="space-y-3 rounded-2xl border border-brand-500/20 bg-brand-500/5 p-6 text-left">
-                <CredentialRow label="Painel" value={credentials?.panel_url ?? veltrixConfig.panelUrl} isLink />
-                <CredentialRow label="Username" value={credentials?.username ?? form.resellerUsername} copyable />
-                <CredentialRow label="E-mail" value={credentials?.email ?? form.resellerEmail} />
-                <CredentialRow label="Senha" value={credentials?.password ?? form.resellerPassword} copyable secret />
+                <CredentialRow
+                  label={t('Painel')}
+                  value={credentials?.panel_url ?? veltrixConfig.panelUrl}
+                  isLink
+                />
+                <CredentialRow
+                  label={t('Username')}
+                  value={credentials?.username ?? form.resellerUsername}
+                  copyable
+                />
+                <CredentialRow
+                  label={t('E-mail')}
+                  value={credentials?.email ?? form.resellerEmail}
+                />
+                <CredentialRow
+                  label={t('Senha')}
+                  value={credentials?.password ?? form.resellerPassword}
+                  copyable
+                  secret
+                />
               </div>
 
               <a
@@ -578,7 +698,7 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
                 className="btn-primary w-full py-3.5"
               >
                 <Crown className="h-4 w-4" />
-                Acessar Painel de Revenda
+                {t('Acessar Painel de Revenda')}
               </a>
             </div>
           )}
@@ -594,7 +714,7 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
                 disabled={submitting}
               >
                 <ArrowLeft className="h-4 w-4" />
-                Voltar
+                {t('Voltar')}
               </button>
             )}
 
@@ -605,8 +725,7 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
                 }}
                 className="btn-primary flex-1 py-3"
               >
-                Continuar
-                <ArrowRight className="h-4 w-4" />
+                {t('Continuar')} <ArrowRight className="h-4 w-4" />
               </button>
             )}
 
@@ -621,12 +740,11 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
                 {submitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Processando...
+                    {t('Processando...')}
                   </>
                 ) : (
                   <>
-                    Gerar PIX
-                    <ArrowRight className="h-4 w-4" />
+                    {t('Gerar PIX')} <ArrowRight className="h-4 w-4" />
                   </>
                 )}
               </button>
@@ -637,7 +755,7 @@ export function PurchaseModal({ plan, onClose }: PurchaseModalProps) {
         {step === 'success' && (
           <div className="border-t border-white/[0.06] px-4 py-3.5 sm:px-6 sm:py-4">
             <button onClick={onClose} className="btn-secondary w-full py-3">
-              Fechar
+              {t('Fechar')}
             </button>
           </div>
         )}
@@ -666,25 +784,31 @@ function Field({
   );
 }
 
-function AvailabilityHint({ status }: { status: 'idle' | 'checking' | 'available' | 'taken' }) {
+function AvailabilityHint({
+  status,
+}: {
+  status: 'idle' | 'checking' | 'available' | 'taken';
+}) {
   if (status === 'idle') return null;
 
   if (status === 'checking') {
     return (
       <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
-        <Loader2 className="h-3 w-3 animate-spin" /> Verificando...
+        <Loader2 className="h-3 w-3 animate-spin" /> {t('Verificando...')}
       </p>
     );
   }
 
   return (
-    <p className={`mt-1 flex items-center gap-1 text-xs ${status === 'available' ? 'text-green-400' : 'text-red-400'}`}>
+    <p
+      className={`mt-1 flex items-center gap-1 text-xs ${status === 'available' ? 'text-green-400' : 'text-red-400'}`}
+    >
       {status === 'available' ? (
         <>
-          <CheckCircle2 className="h-3 w-3" /> Disponível
+          <CheckCircle2 className="h-3 w-3" /> {t('Disponível')}
         </>
       ) : (
-        <>Já está em uso</>
+        <>{t('Já está em uso')}</>
       )}
     </p>
   );
@@ -717,7 +841,12 @@ function CredentialRow({
       <div className="min-w-0 flex-1">
         <p className="text-xs text-gray-500">{label}</p>
         {isLink ? (
-          <a href={value} target="_blank" rel="noopener noreferrer" className="break-all text-sm text-brand-300 hover:underline sm:truncate">
+          <a
+            href={value}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="break-all text-sm text-brand-300 hover:underline sm:truncate"
+          >
             {value}
           </a>
         ) : (
@@ -729,6 +858,7 @@ function CredentialRow({
       <div className="flex shrink-0 gap-1">
         {secret && (
           <button
+            aria-label={revealed ? t('Ocultar senha') : t('Mostrar senha')}
             onClick={() => setRevealed(!revealed)}
             className="rounded-lg p-2 text-gray-400 transition hover:bg-white/5 hover:text-white"
           >
@@ -737,10 +867,15 @@ function CredentialRow({
         )}
         {copyable && (
           <button
+            aria-label={t('Copiar credencial')}
             onClick={handleCopy}
             className="rounded-lg p-2 text-gray-400 transition hover:bg-white/5 hover:text-white"
           >
-            {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+            {copied ? (
+              <Check className="h-4 w-4 text-green-400" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
           </button>
         )}
       </div>

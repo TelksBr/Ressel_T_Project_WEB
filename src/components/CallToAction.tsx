@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { useEffect, useState, type FormEvent } from 'react';
 import {
   AlertCircle,
@@ -11,7 +12,12 @@ import {
 } from 'lucide-react';
 import { veltrixApi, getErrorMessage } from '../lib/veltrix-api';
 import { veltrixConfig } from '../lib/config';
-import { formatPhone, isTrustedEmailDomain, isValidEmail, stripDigits } from '../lib/format';
+import {
+  formatPhone,
+  isTrustedEmailDomain,
+  isValidEmail,
+  stripDigits,
+} from '../lib/format';
 import type { TestConfig } from '../types/veltrix';
 
 export function CallToAction() {
@@ -47,12 +53,16 @@ export function CallToAction() {
     setSuccessMessage(null);
 
     if (!isValidEmail(email)) {
-      setError('Informe um e-mail válido.');
+      setError(t('Informe um e-mail válido.'));
       return;
     }
 
     if (config && !isTrustedEmailDomain(email, config.trusted_email_domains)) {
-      setError('Use um e-mail de provedor conhecido (Gmail, Outlook, Yahoo, iCloud, Proton, etc.).');
+      setError(
+        t(
+          'Use um e-mail de provedor conhecido (Gmail, Outlook, Yahoo, iCloud, Proton, etc.).',
+        ),
+      );
       return;
     }
 
@@ -70,7 +80,7 @@ export function CallToAction() {
       setPhone('');
       setIncludeV2ray(false);
     } catch (err) {
-      setError(getErrorMessage(err, 'Não foi possível criar o teste.'));
+      setError(getErrorMessage(err, t('Não foi possível criar o teste.')));
     } finally {
       setSubmitting(false);
     }
@@ -80,12 +90,15 @@ export function CallToAction() {
   const durationLabel =
     config && config.duration_hours > 0
       ? config.duration_hours === 1
-        ? '1 hora'
-        : `${config.duration_hours} horas`
+        ? t('1 hora')
+        : t('{count} horas', { count: config.duration_hours })
       : null;
 
   return (
-    <section id="teste" className="section-anchor container mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-24">
+    <section
+      id="teste"
+      className="section-anchor container mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-24"
+    >
       <div className="relative overflow-hidden rounded-2xl border border-brand-500/20 bg-gradient-to-br from-brand-900/60 via-surface-card to-brand-950/80 shadow-glow sm:rounded-3xl">
         <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-brand-500/20 blur-3xl" />
         <div className="absolute -bottom-16 -right-16 h-48 w-48 rounded-full bg-accent-cyan/10 blur-3xl" />
@@ -102,22 +115,25 @@ export function CallToAction() {
             </div>
 
             <h2 className="font-display text-2xl font-extrabold tracking-tight text-white sm:text-3xl lg:text-4xl">
-              Faça seu <span className="gradient-text">Teste Grátis</span>
+              {t('Faça seu')}{' '}
+              <span className="gradient-text">{t('Teste Grátis')}</span>
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-gray-400 sm:text-base">
-              Experimente nosso serviço sem compromisso. As credenciais serão enviadas
-              diretamente para o seu e-mail.
+              {t(
+                'Experimente nosso serviço sem compromisso. As credenciais serão enviadas diretamente para o seu e-mail.',
+              )}
             </p>
 
             {!loadingConfig && testEnabled && durationLabel && (
               <div className="mt-5 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
                 <span className="inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1.5 text-xs font-medium text-brand-200">
                   <Clock className="h-3.5 w-3.5" />
-                  Duração: {durationLabel}
+                  {t('Duração:')} {durationLabel}
                 </span>
                 {config && config.cooldown_hours > 0 && (
                   <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-gray-400">
-                    Cooldown: {config.cooldown_hours}h entre testes
+                    {t('Cooldown:')} {config.cooldown_hours}{' '}
+                    {t('h entre testes')}
                   </span>
                 )}
               </div>
@@ -128,7 +144,7 @@ export function CallToAction() {
               className="btn-secondary mt-6 hidden px-6 py-3 text-sm lg:inline-flex"
             >
               <Sparkles className="h-4 w-4" />
-              Ver Planos de Revenda
+              {t('Ver Planos de Revenda')}
             </button>
           </div>
 
@@ -137,16 +153,18 @@ export function CallToAction() {
             {loadingConfig ? (
               <div className="flex flex-col items-center justify-center gap-3 py-10 text-gray-400">
                 <Loader2 className="h-7 w-7 animate-spin text-brand-400" />
-                <p className="text-sm">Carregando teste grátis...</p>
+                <p className="text-sm">{t('Carregando teste grátis...')}</p>
               </div>
             ) : !veltrixConfig.isConfigured ? (
               <div className="py-8 text-center text-sm text-gray-500">
-                Teste indisponível — configure a API no arquivo <code className="text-brand-300">.env</code>.
+                {t('Testes gratuitos indisponíveis no momento.')}
               </div>
             ) : !testEnabled ? (
               <div className="flex flex-col items-center gap-3 py-8 text-center">
                 <AlertCircle className="h-8 w-8 text-amber-400" />
-                <p className="text-sm text-gray-400">Testes gratuitos indisponíveis no momento.</p>
+                <p className="text-sm text-gray-400">
+                  {t('Testes gratuitos indisponíveis no momento.')}
+                </p>
               </div>
             ) : successMessage ? (
               <div className="flex flex-col items-center gap-4 py-6 text-center">
@@ -154,45 +172,58 @@ export function CallToAction() {
                   <CheckCircle2 className="h-7 w-7 text-green-400" />
                 </div>
                 <div>
-                  <h3 className="font-display text-lg font-bold text-white">Teste solicitado!</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-gray-400">{successMessage}</p>
+                  <h3 className="font-display text-lg font-bold text-white">
+                    {t('Teste solicitado!')}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-gray-400">
+                    {t(successMessage)}
+                  </p>
                   <p className="mt-3 text-xs text-gray-500">
-                    Verifique sua caixa de entrada e spam. As credenciais chegam por e-mail.
+                    {t(
+                      'Verifique sua caixa de entrada e spam. As credenciais chegam por e-mail.',
+                    )}
                   </p>
                 </div>
                 <button
                   onClick={() => setSuccessMessage(null)}
                   className="btn-secondary w-full py-3 text-sm sm:w-auto"
                 >
-                  Solicitar outro teste
+                  {t('Solicitar outro teste')}
                 </button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <h3 className="font-display text-lg font-bold text-white">Receber credenciais por e-mail</h3>
+                  <h3 className="font-display text-lg font-bold text-white">
+                    {t('Receber credenciais por e-mail')}
+                  </h3>
                   <p className="mt-1 text-xs text-gray-500 sm:text-sm">
-                    Gmail, Outlook, Yahoo, iCloud, Proton e outros provedores confiáveis.
+                    {t(
+                      'Gmail, Outlook, Yahoo, iCloud, Proton e outros provedores confiáveis.',
+                    )}
                   </p>
                 </div>
 
                 {error && (
                   <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-                    {error}
+                    {t(error)}
                   </div>
                 )}
 
                 <div>
-                  <label htmlFor="test-email" className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-300">
+                  <label
+                    htmlFor="test-email"
+                    className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-300"
+                  >
                     <Mail className="h-3.5 w-3.5 text-brand-400" />
-                    E-mail
+                    {t('E-mail')}
                   </label>
                   <input
                     id="test-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="seu@gmail.com"
+                    placeholder={t('seu@gmail.com')}
                     className="input-field"
                     autoComplete="email"
                     required
@@ -201,8 +232,14 @@ export function CallToAction() {
                 </div>
 
                 <div>
-                  <label htmlFor="test-phone" className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-300">
-                    WhatsApp <span className="text-xs font-normal text-gray-500">(opcional)</span>
+                  <label
+                    htmlFor="test-phone"
+                    className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-300"
+                  >
+                    {t('WhatsApp')}{' '}
+                    <span className="text-xs font-normal text-gray-500">
+                      {t('(opcional)')}
+                    </span>
                   </label>
                   <input
                     id="test-phone"
@@ -227,9 +264,11 @@ export function CallToAction() {
                     <div>
                       <span className="flex items-center gap-1.5 text-sm font-medium text-white">
                         <Shield className="h-3.5 w-3.5 text-brand-400" />
-                        Incluir credencial V2Ray
+                        {t('Incluir credencial V2Ray')}
                       </span>
-                      <p className="mt-0.5 text-xs text-gray-500">Receba também a configuração V2Ray no e-mail.</p>
+                      <p className="mt-0.5 text-xs text-gray-500">
+                        {t('Receba também a configuração V2Ray no e-mail.')}
+                      </p>
                     </div>
                   </label>
                 )}
@@ -242,18 +281,20 @@ export function CallToAction() {
                   {submitting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Gerando teste...
+                      {t('Gerando teste...')}
                     </>
                   ) : (
                     <>
                       <Mail className="h-4 w-4" />
-                      Enviar Teste Grátis
+                      {t('Enviar Teste Grátis')}
                     </>
                   )}
                 </button>
 
                 <p className="text-center text-[11px] leading-relaxed text-gray-500 sm:text-xs">
-                  Suas credenciais nunca são exibidas aqui — enviamos apenas para o e-mail informado.
+                  {t(
+                    'Suas credenciais nunca são exibidas aqui — enviamos apenas para o e-mail informado.',
+                  )}
                 </p>
               </form>
             )}
@@ -262,7 +303,7 @@ export function CallToAction() {
               onClick={scrollToPlans}
               className="btn-secondary mt-4 w-full py-3 text-sm lg:hidden"
             >
-              Ver Planos de Revenda
+              {t('Ver Planos de Revenda')}
             </button>
           </div>
         </div>

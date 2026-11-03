@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n';
 import { MessageCircle, FlaskConical } from 'lucide-react';
 import { scrollToSection } from '../lib/scroll';
 
@@ -9,7 +10,7 @@ export function FloatingActions() {
       <button
         onClick={() => scrollToSection('teste')}
         className="flex h-12 w-12 items-center justify-center rounded-full border border-brand-500/40 bg-brand-600 text-white shadow-glow-sm transition active:scale-95"
-        aria-label="Teste grátis"
+        aria-label={t('Teste grátis')}
       >
         <FlaskConical className="h-5 w-5" />
       </button>
@@ -18,7 +19,7 @@ export function FloatingActions() {
         target="_blank"
         rel="noopener noreferrer"
         className="flex h-12 w-12 items-center justify-center rounded-full border border-green-500/40 bg-green-600 text-white shadow-lg transition active:scale-95"
-        aria-label="WhatsApp"
+        aria-label={t('WhatsApp')}
       >
         <MessageCircle className="h-5 w-5" />
       </a>

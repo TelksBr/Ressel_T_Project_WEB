@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from 'react';
+import { getLocale, subscribeLanguage } from './lib/i18n';
 import { Navigation } from './components/Navigation';
 import { Hero } from './components/Hero';
 import { Management } from './components/Management';
@@ -9,9 +11,13 @@ import { Footer } from './components/Footer';
 import { FloatingActions } from './components/FloatingActions';
 
 function App() {
+  useSyncExternalStore(subscribeLanguage, getLocale);
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-surface">
-      <div className="pointer-events-none fixed inset-0 bg-mesh-gradient" aria-hidden="true" />
+      <div
+        className="pointer-events-none fixed inset-0 bg-mesh-gradient"
+        aria-hidden="true"
+      />
       <div
         className="pointer-events-none fixed -left-32 top-20 hidden h-[500px] w-[500px] animate-pulse-glow rounded-full bg-brand-600/20 blur-[120px] md:block"
         aria-hidden="true"

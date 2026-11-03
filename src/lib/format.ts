@@ -1,5 +1,6 @@
+import { getLocale, t } from './i18n';
 export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('pt-BR', {
+  return new Intl.NumberFormat(getLocale(), {
     style: 'currency',
     currency: 'BRL',
   }).format(value);
@@ -19,7 +20,8 @@ export function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 13);
   if (digits.length <= 2) return digits;
   if (digits.length <= 4) return `+${digits.slice(0, 2)} (${digits.slice(2)}`;
-  if (digits.length <= 9) return `+${digits.slice(0, 2)} (${digits.slice(2, 4)}) ${digits.slice(4)}`;
+  if (digits.length <= 9)
+    return `+${digits.slice(0, 2)} (${digits.slice(2, 4)}) ${digits.slice(4)}`;
   return `+${digits.slice(0, 2)} (${digits.slice(2, 4)}) ${digits.slice(4, 9)}-${digits.slice(9)}`;
 }
 
@@ -52,7 +54,7 @@ export function isValidEmail(email: string | null | undefined): boolean {
 
 export function isTrustedEmailDomain(
   email: string | null | undefined,
-  trustedDomains: string[]
+  trustedDomains: string[],
 ): boolean {
   if (!email || typeof email !== 'string') return false;
   const trimmed = email.trim();
@@ -64,7 +66,8 @@ export function isTrustedEmailDomain(
     .filter((trusted): trusted is string => Boolean(trusted))
     .some(
       (trusted) =>
-        domain === trusted.toLowerCase() || domain.endsWith(`.${trusted.toLowerCase()}`)
+        domain === trusted.toLowerCase() ||
+        domain.endsWith(`.${trusted.toLowerCase()}`),
     );
 }
 
@@ -72,10 +75,10 @@ export function paymentMethodLabel(type: string): string {
   const labels: Record<string, string> = {
     pix: 'PIX',
     instant: 'PIX',
-    credit_card: 'Cartão de Crédito',
-    card: 'Cartão de Crédito',
+    credit_card: t('Cartão de Crédito'),
+    card: t('Cartão de Crédito'),
     paypal: 'PayPal',
-    cash: 'Dinheiro / Manual',
+    cash: t('Dinheiro / Manual'),
   };
   return labels[type] ?? type;
 }
