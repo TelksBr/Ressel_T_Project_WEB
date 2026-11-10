@@ -42,7 +42,7 @@ export function Plans() {
       shortLabel: t('Assinatura'),
       icon: Calendar,
       description: t(
-        'Limite mensal de logins — ideal para revendedores que preferem o painel web.',
+        'Planos com limite de logins simultâneos e prazo de validade para a revenda.',
       ),
       footnote: t(
         'Pagamento via PIX · Credenciais entregues na hora · Painel web incluso',
@@ -53,7 +53,7 @@ export function Plans() {
       shortLabel: t('Crédito'),
       icon: Coins,
       description: t(
-        'Créditos para criar logins — compre pelo site e gerencie pelo painel web.',
+        'Planos com saldo de créditos para criar logins pelo painel web.',
       ),
       footnote: t(
         'PIX · Créditos liberados após o pagamento · Painel web incluso',
@@ -132,6 +132,31 @@ export function Plans() {
           )}
         </p>
         <div className="divider-glow mt-6" />
+      </div>
+
+      <div className="mt-8 grid gap-4 sm:mt-10 lg:grid-cols-2 lg:gap-6">
+        <PlanModeExplainer
+          icon={Calendar}
+          title={t('Assinatura')}
+          summary={t('Prazo para a revenda com limite de conexões simultâneas.')}
+          points={[
+            t('Você recebe slots de logins e uma validade para a revenda.'),
+            t('Cada conexão simultânea ocupa 1 slot; logins com várias conexões usam mais slots.'),
+            t('É preciso renovar a assinatura quando o período da revenda termina.'),
+          ]}
+          accent="brand"
+        />
+        <PlanModeExplainer
+          icon={Coins}
+          title={t('Crédito')}
+          summary={t('Saldo para criar logins, sem prazo de validade para a revenda.')}
+          points={[
+            t('Cada login no modo crédito permite 1 conexão.'),
+            t('1 crédito equivale a 30 dias por conexão; o consumo acompanha a duração escolhida.'),
+            t('Exemplo: 15 dias = 0,50 crédito · 30 dias = 1 crédito · 90 dias = 3 créditos.'),
+          ]}
+          accent="cyan"
+        />
       </div>
 
       {!loading && !error && plans.length > 0 && (
@@ -248,6 +273,47 @@ export function Plans() {
         />
       )}
     </section>
+  );
+}
+
+function PlanModeExplainer({
+  icon: Icon,
+  title,
+  summary,
+  points,
+  accent,
+}: {
+  icon: typeof Calendar;
+  title: string;
+  summary: string;
+  points: string[];
+  accent: 'brand' | 'cyan';
+}) {
+  const tone =
+    accent === 'brand'
+      ? 'border-brand-500/20 bg-brand-500/[0.06] text-brand-300'
+      : 'border-accent-cyan/20 bg-accent-cyan/[0.05] text-accent-cyan';
+
+  return (
+    <article className="glass-card premium-border p-5 sm:p-6">
+      <div className="flex items-start gap-3">
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${tone}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <div>
+          <h3 className="font-display text-lg font-bold text-white">{title}</h3>
+          <p className="mt-1 text-sm leading-relaxed text-gray-400">{summary}</p>
+        </div>
+      </div>
+      <ul className="mt-5 space-y-3">
+        {points.map((point) => (
+          <li key={point} className="flex items-start gap-2.5 text-sm leading-relaxed text-gray-300">
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-400" />
+            <span>{point}</span>
+          </li>
+        ))}
+      </ul>
+    </article>
   );
 }
 
