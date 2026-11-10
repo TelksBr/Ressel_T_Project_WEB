@@ -1,13 +1,11 @@
 import { t } from '../lib/i18n';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
-  Bot,
   Calendar,
   Check,
   Coins,
   Crown,
   CreditCard,
-  ExternalLink,
   ShoppingCart,
   Sparkles,
   AlertCircle,
@@ -17,8 +15,6 @@ import { veltrixConfig } from '../lib/config';
 import { formatCurrency } from '../lib/format';
 import { PurchaseModal } from './purchase/PurchaseModal';
 import type { ResellerPlan } from '../types/veltrix';
-
-const TELEGRAM_BOT_URL = 'https://t.me/ssh_t_project_vip_bot';
 
 type PlanCategory = 'subscribe' | 'credit';
 
@@ -57,10 +53,10 @@ export function Plans() {
       shortLabel: t('Crédito'),
       icon: Coins,
       description: t(
-        'Créditos para criar logins — contrate e gerencie pelo bot oficial no Telegram.',
+        'Créditos para criar logins — compre pelo site e gerencie pelo painel web.',
       ),
       footnote: t(
-        'Compra e gestão via @ssh_t_project_vip_bot · Bots Telegram inclusos',
+        'PIX · Créditos liberados após o pagamento · Painel web incluso',
       ),
     },
   };
@@ -132,7 +128,7 @@ export function Plans() {
         </h2>
         <p className="section-subtitle px-2">
           {t(
-            'Assinatura mensal pelo site ou planos crédito via bot no Telegram',
+            'Compre seu plano pelo site e gerencie sua revenda pelo painel web',
           )}
         </p>
         <div className="divider-glow mt-6" />
@@ -245,7 +241,7 @@ export function Plans() {
         </div>
       )}
 
-      {selectedPlan && category === 'subscribe' && (
+      {selectedPlan && (
         <PurchaseModal
           plan={selectedPlan}
           onClose={() => setSelectedPlan(null)}
@@ -426,7 +422,7 @@ function PlanCard({
           ) : null}
           {isCredit ? (
             <>
-              <PlanFeature>{t('Gestão via bot Telegram')}</PlanFeature>
+              <PlanFeature>{t('Gestão pelo painel web')}</PlanFeature>
               <PlanFeature>{t('Painel web incluso')}</PlanFeature>
             </>
           ) : (
@@ -439,25 +435,13 @@ function PlanCard({
         </ul>
 
         <div className="mt-auto pt-6 sm:pt-8">
-          {isCredit ? (
-            <a
-              href={TELEGRAM_BOT_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-primary w-full py-3 text-sm sm:py-3.5 sm:text-base"
-            >
-              <Bot className="h-4 w-4" />
-              {t('Comprar via Bot')} <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-          ) : (
-            <button
-              onClick={onPurchase}
-              className="btn-primary w-full py-3 text-sm sm:py-3.5 sm:text-base"
-            >
-              <ShoppingCart className="h-4 w-4" />
-              {t('Comprar Agora')}
-            </button>
-          )}
+          <button
+            onClick={onPurchase}
+            className="btn-primary w-full py-3 text-sm sm:py-3.5 sm:text-base"
+          >
+            <ShoppingCart className="h-4 w-4" />
+            {t('Comprar Agora')}
+          </button>
         </div>
       </div>
     </CardWrapper>

@@ -1,5 +1,5 @@
 import { t } from '../lib/i18n';
-import { Shield, Heart } from 'lucide-react';
+import { Shield, Heart, PlayCircle } from 'lucide-react';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -24,7 +24,16 @@ export function Footer() {
             </div>
           </div>
 
-          <div className="flex flex-col items-center gap-1 md:items-end">
+          <div className="flex flex-col items-center gap-2 md:items-end">
+            <a
+              href="https://play.google.com/store/apps/details?id=app.reselltproject"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-brand-300 transition hover:text-white"
+            >
+              <PlayCircle className="h-4 w-4" aria-hidden="true" />
+              {t('Baixar o app Resell T Project na Play Store')}
+            </a>
             <p className="text-sm text-gray-500">
               © {currentYear}{' '}
               {t('Resell T Project. Todos os direitos reservados.')}
