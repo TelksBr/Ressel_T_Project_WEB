@@ -1,0 +1,4723 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Veltrix Panel Public API",
+    "version": "0.1.0",
+    "description": "Public endpoints for account sales, reseller sales, renewal, free tests, credential recovery, and CheckUser.\nAuth: PWA session cookie (bootstrap) or `X-Public-Api-Token` header for server integrations.\n",
+    "contact": {
+      "name": "Veltrix Panel"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Panel API base (prepend your licensed domain)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "auth",
+      "x-veltrix-section": "auth"
+    },
+    {
+      "name": "account-sales",
+      "x-veltrix-section": "accountSales"
+    },
+    {
+      "name": "reseller-sales",
+      "x-veltrix-section": "resellerSales"
+    },
+    {
+      "name": "renewal",
+      "x-veltrix-section": "renewal"
+    },
+    {
+      "name": "public-test",
+      "x-veltrix-section": "publicTest"
+    },
+    {
+      "name": "credential-recovery",
+      "x-veltrix-section": "credentialRecovery"
+    },
+    {
+      "name": "payment",
+      "x-veltrix-section": "payment"
+    },
+    {
+      "name": "checkuser",
+      "x-veltrix-section": "checkuser"
+    },
+    {
+      "name": "servers",
+      "x-veltrix-section": "servers"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "PublicApiToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Public-Api-Token"
+      },
+      "PublicSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "veltrix_public_sess"
+      }
+    },
+    "schemas": {
+      "ApiSuccessEnvelope": {
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiErrorEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": false
+          },
+          "message": {
+            "type": "string"
+          },
+          "error_type": "#/components/schemas/PublicApiErrorType"
+        }
+      },
+      "RateLimitError": {
+        "type": "object",
+        "required": [
+          "error",
+          "message",
+          "retry_after"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "const": "Too Many Requests"
+          },
+          "message": {
+            "type": "string"
+          },
+          "retry_after": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "PublicApiErrorType": {
+        "type": "string",
+        "enum": [
+          "public_api_token_required",
+          "public_api_token_scope_denied",
+          "public_api_session_context_denied",
+          "public_api_unauthorized"
+        ]
+      },
+      "SlugParam": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Seller slug (admin or reseller)"
+      },
+      "PaymentIdParam": {
+        "type": "string",
+        "description": "Gateway payment ID, internal order_id (ORD_…), wallet preference_id, or numeric db_payment_id"
+      },
+      "SessionBootstrapResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "required": [
+              "expires_at",
+              "context"
+            ],
+            "properties": {
+              "expires_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "context": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "SalesPlansResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "plans",
+          "seller"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "plans": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "seller": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              }
+            }
+          }
+        }
+      },
+      "SalesPaymentMethodsResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "required": [
+              "methods"
+            ],
+            "properties": {
+              "methods": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "method_id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "min_amount": {
+                      "type": "string"
+                    },
+                    "max_amount": {
+                      "type": "string"
+                    },
+                    "gateway_id": {
+                      "type": "integer"
+                    },
+                    "gateway_provider": {
+                      "type": "string"
+                    },
+                    "selection_key": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "gateways": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "gateway": {
+                "type": "object",
+                "description": "Primary gateway (first in gateways). Includes payer_document and payer_document_rules."
+              }
+            }
+          }
+        }
+      },
+      "MessageTemplatesResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "templates": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "app_download_link": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          }
+        }
+      },
+      "ResellerCheckAvailabilityResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "available"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "available": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RenewalSearchResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "account",
+          "seller",
+          "plans"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "account": {
+            "type": "object"
+          },
+          "seller": {
+            "type": "object"
+          },
+          "plans": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "RenewalPlansResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "plans"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "plans": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "PublicTestConfigResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object"
+          }
+        }
+      },
+      "RecoveryConfigResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "cooldown_hours": {
+                "type": "integer"
+              },
+              "smtp_available": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "CheckuserConecta4gRequest": {
+        "type": "object",
+        "required": [
+          "user"
+        ],
+        "properties": {
+          "user": {
+            "type": "string",
+            "description": "Login (also accepts username / usuario)"
+          }
+        }
+      },
+      "CheckuserConecta4gResponse": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "count_connection": {
+            "type": "integer"
+          },
+          "limiter_user": {
+            "type": "integer"
+          },
+          "expiration_date": {
+            "type": "string",
+            "description": "Always UTC. Real accounts return the calendar date only (ISO YYYY-MM-DD or common date pattern). Test accounts may include time (ISO YYYY-MM-DDTHH:mm:ssZ or common pattern with H:i:s)."
+          },
+          "expiration_days": {
+            "type": "integer",
+            "description": "Remaining days (minimum 1 while still valid)"
+          },
+          "expiration_hours": {
+            "type": "integer",
+            "description": "Present only for test accounts (is_test=1). Remaining hours (minimum 1 while still valid; 0 if expired)."
+          }
+        }
+      },
+      "CheckuserDtunnelResponse": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "count_connections": {
+            "type": "integer"
+          },
+          "limit_connections": {
+            "type": "integer"
+          },
+          "expiration_date": {
+            "type": "string",
+            "description": "Always UTC. Real accounts return the calendar date only (ISO YYYY-MM-DD or common date pattern). Test accounts may include time (ISO YYYY-MM-DDTHH:mm:ssZ or common pattern with H:i:s)."
+          },
+          "expiration_days": {
+            "type": "integer",
+            "description": "Remaining days (minimum 1 while still valid)"
+          },
+          "expiration_hours": {
+            "type": "integer",
+            "description": "Present only for test accounts (is_test=1). Remaining hours (minimum 1 while still valid; 0 if expired)."
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "PaymentCreatePixResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "payment_id",
+          "status",
+          "payment_method"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "payment_id": {
+            "type": "string",
+            "description": "Poll GET /payment/{paymentId}/status with this value. For wallet (`account_money`) it is the internal order_id until Mercado Pago creates a payment."
+          },
+          "order_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "payment_method": {
+            "type": "string"
+          },
+          "db_payment_id": {
+            "type": "integer"
+          },
+          "pix": {
+            "type": "object",
+            "properties": {
+              "qr_code_base64": {
+                "type": "string",
+                "nullable": true
+              },
+              "qr_code_text": {
+                "type": "string",
+                "nullable": true
+              },
+              "expires_at": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              }
+            }
+          },
+          "card": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string"
+              },
+              "status_detail": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "ticket": {
+            "type": "object",
+            "description": "Cash methods (oxxo, rapipago, …)",
+            "properties": {
+              "payment_url": {
+                "type": "string",
+                "nullable": true
+              },
+              "barcode": {
+                "type": "string",
+                "nullable": true
+              },
+              "expires_at": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "wallet": {
+            "type": "object",
+            "description": "Mercado Pago Wallet Brick (`account_money`)",
+            "properties": {
+              "preference_id": {
+                "type": "string",
+                "nullable": true
+              },
+              "init_point": {
+                "type": "string",
+                "nullable": true
+              },
+              "sandbox_init_point": {
+                "type": "string",
+                "nullable": true
+              },
+              "checkout_url": {
+                "type": "string",
+                "nullable": true,
+                "description": "URL to open. Production credentials use init_point; TEST- credentials use sandbox_init_point. Country TLD follows the MP account (.com.ar = Argentina)."
+              },
+              "order_id": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "paypal": {
+            "type": "object",
+            "properties": {
+              "order_id": {
+                "type": "string",
+                "nullable": true
+              },
+              "client_id": {
+                "type": "string"
+              },
+              "environment": {
+                "type": "string"
+              }
+            }
+          },
+          "payment_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "PaymentStatusResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "status"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "status": {
+            "type": "string",
+            "description": "pending | in_process | approved | cancelled | rejected | …"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "product_type": {
+            "type": "string",
+            "enum": [
+              "account",
+              "reseller",
+              "reseller_credits",
+              "reseller_renewal"
+            ]
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "provisioning": {
+            "type": "boolean",
+            "description": "True when payment is approved but the SSH/V2Ray account is still being created. Keep polling."
+          },
+          "account": {
+            "type": "object",
+            "description": "Present only after approved provisioning. Contains username/password and/or v2ray_uuid.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "ssh",
+                  "v2ray",
+                  "combo"
+                ]
+              },
+              "username": {
+                "type": "string"
+              },
+              "password": {
+                "type": "string"
+              },
+              "v2ray_uuid": {
+                "type": "string"
+              },
+              "uuid": {
+                "type": "string"
+              },
+              "connection_limit": {
+                "type": "integer"
+              },
+              "expires_at": {
+                "type": "string"
+              },
+              "category_name": {
+                "type": "string"
+              }
+            }
+          },
+          "reseller": {
+            "type": "object",
+            "description": "Present for approved reseller subscription purchase, reseller credit purchase, or reseller renewal.",
+            "properties": {
+              "username": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "credit",
+                  "subscribe"
+                ],
+                "description": "Reseller billing type."
+              },
+              "credits_balance": {
+                "type": "number",
+                "description": "Current credit balance for a credit reseller."
+              },
+              "login_limit": {
+                "type": "integer",
+                "description": "Login limit for a subscription reseller."
+              },
+              "expires_at": {
+                "type": "string",
+                "nullable": true
+              },
+              "panel_url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "category_name": {
+                "type": "string"
+              },
+              "duration_days": {
+                "type": "integer",
+                "description": "Renewal duration; present for reseller renewal."
+              }
+            }
+          },
+          "credits": {
+            "type": "object",
+            "description": "Present for an approved credit purchase for an existing reseller.",
+            "properties": {
+              "credits_added": {
+                "type": "number"
+              },
+              "credits_balance": {
+                "type": "number"
+              }
+            }
+          },
+          "reseller_renewal": {
+            "type": "boolean",
+            "const": true,
+            "description": "Present only for an approved reseller renewal."
+          },
+          "email_sent": {
+            "type": "boolean"
+          },
+          "renewal": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Missing or invalid credentials",
+        "content": {
+          "application/json": {
+            "schema": "#/components/schemas/ApiErrorEnvelope"
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Authenticated but not allowed for this resource",
+        "content": {
+          "application/json": {
+            "schema": "#/components/schemas/ApiErrorEnvelope"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/public/session/bootstrap": {
+      "post": {
+        "operationId": "sessionBootstrap",
+        "tags": [
+          "auth"
+        ],
+        "summary": "Bootstrap public PWA session",
+        "x-veltrix-auth": "pwa_bootstrap",
+        "x-veltrix-section": "auth",
+        "x-veltrix-endpoint-id": "sessionBootstrap",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.auth.sessionBootstrap",
+        "x-veltrix-rate-limit": {
+          "key": "public_session_bootstrap",
+          "limit": 30,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Authentication",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "context": {
+                    "type": "string",
+                    "enum": [
+                      "sales",
+                      "test",
+                      "renewal",
+                      "reseller-sales"
+                    ]
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                }
+              },
+              "examples": {
+                "default": {
+                  "value": {
+                    "context": "sales",
+                    "slug": "seu-slug"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session cookie set",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/SessionBootstrapResponse",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "expires_at": "2026-08-16T04:29:00+00:00",
+                        "context": "sales"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Session context denied",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "contextDenied": {
+                    "value": {
+                      "success": false,
+                      "message": "Token de API pública obrigatório",
+                      "error_type": "public_api_token_required"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-request-examples": {
+          "default": "examples/session-bootstrap-request.json"
+        },
+        "x-veltrix-response-examples": {
+          "default": "examples/session-bootstrap-response.json"
+        }
+      }
+    },
+    "/public/sales/{slug}/plans": {
+      "get": {
+        "operationId": "salesPlans",
+        "tags": [
+          "account-sales"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "accountSales",
+        "x-veltrix-endpoint-id": "salesPlans",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.accountSales.salesPlans",
+        "x-veltrix-rate-limit": {
+          "key": "public_get_plans",
+          "limit": 60,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Account Sales",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": "#/components/schemas/SlugParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active account plans",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/SalesPlansResponse",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": true,
+                      "plans": [
+                        {
+                          "id": 1,
+                          "name": "Plano 30 dias",
+                          "price": "29.90",
+                          "currency": "BRL",
+                          "duration_days": 30,
+                          "connection_limit": 1,
+                          "type": "combo"
+                        }
+                      ],
+                      "seller": {
+                        "name": "loja-demo",
+                        "email": "vendedor@example.com"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-response-examples": {
+          "default": "examples/sales-plans-response.json"
+        }
+      }
+    },
+    "/public/sales/{slug}/payment-methods": {
+      "get": {
+        "operationId": "salesPaymentMethods",
+        "tags": [
+          "account-sales"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "accountSales",
+        "x-veltrix-endpoint-id": "salesPaymentMethods",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.accountSales.salesPaymentMethods",
+        "x-veltrix-rate-limit": {
+          "key": "public_get_plans",
+          "limit": 60,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Account Sales",
+        "x-veltrix-guide-refs": [
+          "payment-methods"
+        ],
+        "x-veltrix-query-hints": {
+          "amount": "paymentMethodsAmount"
+        },
+        "x-veltrix-query-examples": {
+          "amount": "29.90"
+        },
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": "#/components/schemas/SlugParam"
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "float"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment methods and gateway metadata",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/SalesPaymentMethodsResponse",
+                "examples": {
+                  "brazilPixCardPaypal": {
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "methods": [
+                          {
+                            "method_id": "pix",
+                            "name": "PIX",
+                            "type": "instant",
+                            "description": "Pagamento instantâneo via PIX",
+                            "min_amount": "0.01",
+                            "max_amount": "500000.00",
+                            "gateway_id": 1,
+                            "gateway_provider": "mercadopago",
+                            "selection_key": "1:pix"
+                          },
+                          {
+                            "method_id": "credit_card",
+                            "name": "Cartão de Crédito",
+                            "type": "card",
+                            "description": "Visa, Mastercard, Elo, Amex e Hipercard",
+                            "min_amount": "1.00",
+                            "max_amount": "500000.00",
+                            "gateway_id": 1,
+                            "gateway_provider": "mercadopago",
+                            "selection_key": "1:credit_card"
+                          },
+                          {
+                            "method_id": "paypal",
+                            "name": "PayPal",
+                            "type": "wallet",
+                            "description": "Pague com conta PayPal ou cartão",
+                            "min_amount": "0.01",
+                            "max_amount": "999999.99",
+                            "gateway_id": 2,
+                            "gateway_provider": "paypal",
+                            "selection_key": "2:paypal"
+                          }
+                        ],
+                        "gateways": [
+                          {
+                            "id": 1,
+                            "provider": "mercadopago",
+                            "region": "BR",
+                            "currency": "BRL",
+                            "mp_public_key": "APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                            "payer_document": {
+                              "type": "CPF",
+                              "label": "CPF",
+                              "min_len": 11,
+                              "max_len": 11,
+                              "charset": "digits"
+                            },
+                            "payer_document_rules": {
+                              "pix": "payment",
+                              "credit_card": "payment"
+                            },
+                            "mp_credential_environment": "production"
+                          },
+                          {
+                            "id": 2,
+                            "provider": "paypal",
+                            "region": "BR",
+                            "currency": "BRL",
+                            "paypal_client_id": "sandbox-client-id",
+                            "paypal_environment": "sandbox",
+                            "payer_document_rules": {}
+                          }
+                        ],
+                        "gateway": {
+                          "id": 1,
+                          "provider": "mercadopago",
+                          "region": "BR",
+                          "currency": "BRL",
+                          "mp_public_key": "APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                          "payer_document": {
+                            "type": "CPF",
+                            "label": "CPF",
+                            "min_len": 11,
+                            "max_len": 11,
+                            "charset": "digits"
+                          },
+                          "payer_document_rules": {
+                            "pix": "payment",
+                            "credit_card": "payment"
+                          },
+                          "mp_credential_environment": "production"
+                        }
+                      }
+                    },
+                    "summary": "Brazil — PIX, card, PayPal"
+                  },
+                  "mexicoCash": {
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "methods": [
+                          {
+                            "method_id": "credit_card",
+                            "name": "Cartão de Crédito",
+                            "type": "card",
+                            "description": "Visa, Mastercard",
+                            "min_amount": "1.00",
+                            "max_amount": "500000.00",
+                            "gateway_id": 3,
+                            "gateway_provider": "mercadopago",
+                            "selection_key": "3:credit_card"
+                          },
+                          {
+                            "method_id": "oxxo",
+                            "name": "OXXO",
+                            "type": "cash",
+                            "description": "Pague em lojas OXXO",
+                            "min_amount": "1.00",
+                            "max_amount": "10000.00",
+                            "gateway_id": 3,
+                            "gateway_provider": "mercadopago",
+                            "selection_key": "3:oxxo"
+                          },
+                          {
+                            "method_id": "paycash",
+                            "name": "PayCash",
+                            "type": "cash",
+                            "description": "Pague em efetivo",
+                            "min_amount": "1.00",
+                            "max_amount": "10000.00",
+                            "gateway_id": 3,
+                            "gateway_provider": "mercadopago",
+                            "selection_key": "3:paycash"
+                          }
+                        ],
+                        "gateways": [
+                          {
+                            "id": 3,
+                            "provider": "mercadopago",
+                            "region": "MX",
+                            "currency": "MXN",
+                            "mp_public_key": "APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                            "payer_document": {
+                              "type": "CURP",
+                              "label": "CURP",
+                              "min_len": 18,
+                              "max_len": 18,
+                              "charset": "alnum"
+                            },
+                            "payer_document_rules": {
+                              "credit_card": "payment",
+                              "oxxo": "payment",
+                              "paycash": "payment"
+                            },
+                            "mp_credential_environment": "production"
+                          }
+                        ],
+                        "gateway": {
+                          "id": 3,
+                          "provider": "mercadopago",
+                          "region": "MX",
+                          "currency": "MXN",
+                          "mp_public_key": "APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                          "payer_document": {
+                            "type": "CURP",
+                            "label": "CURP",
+                            "min_len": 18,
+                            "max_len": 18,
+                            "charset": "alnum"
+                          },
+                          "payer_document_rules": {
+                            "credit_card": "payment",
+                            "oxxo": "payment",
+                            "paycash": "payment"
+                          },
+                          "mp_credential_environment": "production"
+                        }
+                      }
+                    },
+                    "summary": "Mexico — card, OXXO, PayCash"
+                  },
+                  "asaasPix": {
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "methods": [
+                          {
+                            "method_id": "pix",
+                            "name": "PIX",
+                            "type": "instant",
+                            "description": "Pagamento instantâneo via PIX",
+                            "min_amount": "0.01",
+                            "max_amount": "500000.00",
+                            "gateway_id": 4,
+                            "gateway_provider": "asaas",
+                            "selection_key": "4:pix"
+                          }
+                        ],
+                        "gateways": [
+                          {
+                            "id": 4,
+                            "provider": "asaas",
+                            "region": "BR",
+                            "currency": "BRL",
+                            "payer_document": {
+                              "type": "CPF",
+                              "label": "CPF",
+                              "min_len": 11,
+                              "max_len": 11,
+                              "charset": "digits"
+                            },
+                            "payer_document_rules": {
+                              "pix": "customer"
+                            }
+                          }
+                        ],
+                        "gateway": {
+                          "id": 4,
+                          "provider": "asaas",
+                          "region": "BR",
+                          "currency": "BRL",
+                          "payer_document": {
+                            "type": "CPF",
+                            "label": "CPF",
+                            "min_len": 11,
+                            "max_len": 11,
+                            "charset": "digits"
+                          },
+                          "payer_document_rules": {
+                            "pix": "customer"
+                          }
+                        }
+                      }
+                    },
+                    "summary": "Asaas PIX (Brazil)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-response-examples": {
+          "brazilPixCardPaypal": "examples/payment-methods-response.json",
+          "mexicoCash": "examples/payment-methods-mexico-response.json",
+          "asaasPix": "examples/payment-methods-asaas-response.json"
+        }
+      }
+    },
+    "/public/sales/{slug}/coupons/validate": {
+      "post": {
+        "operationId": "salesCouponValidate",
+        "tags": [
+          "account-sales"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "accountSales",
+        "x-veltrix-endpoint-id": "salesCouponValidate",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.accountSales.salesCouponValidate",
+        "x-veltrix-rate-limit": {
+          "key": "coupon_validate_public",
+          "limit": 20,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Account Sales",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": "#/components/schemas/SlugParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "examples": {
+                "default": {
+                  "value": {
+                    "code": "PROMO10",
+                    "plan_id": 1,
+                    "amount": 29.9
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Coupon valid",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": true,
+                      "message": "Cupom válido",
+                      "data": {
+                        "code": "PROMO10",
+                        "coupon_code": "PROMO10",
+                        "discount_type": "percent",
+                        "original_amount": 29.9,
+                        "discount_amount": 2.99,
+                        "final_amount": 26.91,
+                        "currency": "BRL"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-request-examples": {
+          "default": "examples/coupon-validate-request.json"
+        },
+        "x-veltrix-response-examples": {
+          "default": "examples/coupon-validate-response.json"
+        }
+      }
+    },
+    "/public/sales/{slug}/payment": {
+      "post": {
+        "operationId": "salesCreatePayment",
+        "summary": "Create account sale payment",
+        "description": "Creates checkout for an SSH/V2Ray plan. `payment_method_type` must be a `method_id` from\n`GET /public/sales/{slug}/payment-methods` (pix, credit_card, paypal, account_money, oxxo, rapipago, …).\n\nOptional SSH credentials: `username` and `password` (aliases `account_username`/`account_password`, `usuario`/`senha`).\nOmit them or send empty strings to keep random generation after payment approval.\n\nThis response never includes the account password. After paying, poll\n`GET /public/payment/{paymentId}/status` until `status` is `approved` and the `account` object is present.\n\nWallet (`account_money`): optional `return_url` (HTTPS) is the Mercado Pago “back to site” page.\nQuery `wallet` + `order_id` are appended. Omit it to return to the panel PWA.\n",
+        "tags": [
+          "account-sales"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "accountSales",
+        "x-veltrix-endpoint-id": "salesPayment",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.accountSales.salesPayment",
+        "x-veltrix-rate-limit": {
+          "key": "public_create_payment",
+          "limit": 10,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Account Sales",
+        "x-veltrix-guide-refs": [
+          "account-sales-flow",
+          "payment-methods",
+          "payment-polling"
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": "#/components/schemas/SlugParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "plan_id",
+                  "gateway_id",
+                  "payment_method_type"
+                ],
+                "properties": {
+                  "plan_id": {
+                    "type": "integer"
+                  },
+                  "gateway_id": {
+                    "type": "integer"
+                  },
+                  "payment_method_type": {
+                    "type": "string",
+                    "description": "Required. Use an exact method_id returned by this seller's GET payment-methods catalog. IDs vary by active gateway, region, selected methods, and amount; the examples are not an exhaustive list."
+                  },
+                  "customer_name": {
+                    "type": "string"
+                  },
+                  "customer_email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "customer_cpf": {
+                    "type": "string",
+                    "description": "Customer document required only when the selected gateway/method rules require it."
+                  },
+                  "identification_type": {
+                    "type": "string",
+                    "description": "Document type from the selected gateway's payer_document field."
+                  },
+                  "customer_whatsapp": {
+                    "type": "string"
+                  },
+                  "card_token": {
+                    "type": "string",
+                    "description": "Mercado Pago SDK token; never send raw card number or CVV."
+                  },
+                  "mp_payment_method_id": {
+                    "type": "string"
+                  },
+                  "installments": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "issuer_id": {
+                    "type": "string"
+                  },
+                  "issuer_verified": {
+                    "type": "boolean"
+                  },
+                  "cardholder_name": {
+                    "type": "string"
+                  },
+                  "mp_public_key_used": {
+                    "type": "string"
+                  },
+                  "mp_device_session_id": {
+                    "type": "string",
+                    "description": "Send in production Mercado Pago card checkouts."
+                  },
+                  "username": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]{3,32}$",
+                    "description": "Optional SSH/V2Ray login. Letter case is preserved. Empty or omitted keeps random generation."
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 64,
+                    "description": "Optional SSH password (SSH/combo plans). Empty or omitted keeps random generation."
+                  },
+                  "account_username": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]{3,32}$"
+                  },
+                  "account_password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 64
+                  },
+                  "usuario": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]{3,32}$"
+                  },
+                  "senha": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 64
+                  },
+                  "return_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Optional. HTTPS page on your site for Mercado Pago Wallet return (aliases success_url, back_url). Query wallet=success|failure|pending and order_id are appended. Omit to keep the panel PWA.\n"
+                  },
+                  "failure_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "pending_url": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              },
+              "examples": {
+                "pix": {
+                  "value": {
+                    "plan_id": 1,
+                    "gateway_id": 1,
+                    "payment_method_type": "pix",
+                    "customer_name": "João Silva",
+                    "customer_email": "cliente@gmail.com",
+                    "customer_cpf": "12345678909",
+                    "identification_type": "CPF",
+                    "customer_whatsapp": "5511999999999"
+                  },
+                  "summary": "PIX with random SSH credentials"
+                },
+                "creditCard": {
+                  "value": {
+                    "plan_id": 1,
+                    "gateway_id": 1,
+                    "payment_method_type": "credit_card",
+                    "customer_name": "João Silva",
+                    "customer_email": "cliente@gmail.com",
+                    "customer_cpf": "12345678909",
+                    "identification_type": "CPF",
+                    "card_token": "4062eff189b94b020113c8add0a208ab",
+                    "mp_payment_method_id": "master",
+                    "installments": 1,
+                    "issuer_id": "12518",
+                    "issuer_verified": true,
+                    "cardholder_name": "João Silva",
+                    "mp_public_key_used": "APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                    "mp_device_session_id": "armor.e631ab657a41c7f0a1b2c3d4e5f678901234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890.fdb3b2a49a9793b39243a37fc8ff2d8b"
+                  },
+                  "summary": "Credit card"
+                },
+                "pixCustomCredentials": {
+                  "value": {
+                    "plan_id": 1,
+                    "gateway_id": 1,
+                    "payment_method_type": "pix",
+                    "customer_name": "João Silva",
+                    "customer_email": "cliente@gmail.com",
+                    "customer_cpf": "12345678909",
+                    "identification_type": "CPF",
+                    "customer_whatsapp": "5511999999999",
+                    "username": "joao123",
+                    "password": "senha123"
+                  },
+                  "summary": "PIX with custom SSH username and password"
+                },
+                "paypal": {
+                  "value": {
+                    "plan_id": 1,
+                    "gateway_id": 2,
+                    "payment_method_type": "paypal",
+                    "customer_name": "João Silva",
+                    "customer_email": "cliente@gmail.com"
+                  },
+                  "summary": "PayPal order (then capture)"
+                },
+                "wallet": {
+                  "value": {
+                    "plan_id": 1,
+                    "gateway_id": 1,
+                    "payment_method_type": "account_money",
+                    "customer_email": "cliente@gmail.com",
+                    "return_url": "https://minhaloja.com/obrigado"
+                  },
+                  "summary": "Mercado Pago Wallet (account_money)"
+                },
+                "oxxo": {
+                  "value": {
+                    "plan_id": 1,
+                    "gateway_id": 3,
+                    "payment_method_type": "oxxo",
+                    "customer_name": "Maria Garcia",
+                    "customer_email": "cliente@gmail.com",
+                    "customer_cpf": "GAML850101HDFRRN09",
+                    "identification_type": "CURP"
+                  },
+                  "summary": "OXXO cash ticket (Mexico)"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment created",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/PaymentCreatePixResponse",
+                "examples": {
+                  "pixCreated": {
+                    "value": {
+                      "success": true,
+                      "payment_id": "1234567890",
+                      "order_id": "ORD_abc123_1_5",
+                      "status": "pending",
+                      "payment_method": "pix",
+                      "db_payment_id": 87,
+                      "pix": {
+                        "qr_code_base64": "iVBORw0KGgoAAAANSUhEUg...",
+                        "qr_code_text": "00020126580014BR.GOV.BCB.PIX...",
+                        "expires_at": "2026-07-17T21:30:00+00:00"
+                      }
+                    },
+                    "summary": "PIX QR created"
+                  },
+                  "cardCreated": {
+                    "value": {
+                      "success": true,
+                      "payment_id": "1234567890",
+                      "order_id": "ORD_abc123_1_5",
+                      "status": "pending",
+                      "payment_method": "credit_card",
+                      "db_payment_id": 88,
+                      "message": "Pagamento em análise. Aguarde a confirmação.",
+                      "card": {
+                        "status": "pending",
+                        "status_detail": "pending_contingency"
+                      }
+                    },
+                    "summary": "Credit card pending review"
+                  },
+                  "ticketCreated": {
+                    "value": {
+                      "success": true,
+                      "payment_id": "9876543210",
+                      "order_id": "ORD_abc123_1_5",
+                      "status": "pending",
+                      "payment_method": "oxxo",
+                      "db_payment_id": 93,
+                      "payment_url": "https://www.mercadopago.com.mx/payments/9876543210/ticket?caller_id=1&hash=abc",
+                      "ticket": {
+                        "payment_url": "https://www.mercadopago.com.mx/payments/9876543210/ticket?caller_id=1&hash=abc",
+                        "barcode": "12345678901234567890",
+                        "expires_at": "2026-07-20 20:00:00"
+                      }
+                    },
+                    "summary": "Cash ticket (OXXO / Rapipago / …)"
+                  },
+                  "walletCreated": {
+                    "value": {
+                      "success": true,
+                      "payment_id": "ORD_abc123_1_5",
+                      "order_id": "ORD_abc123_1_5",
+                      "status": "pending",
+                      "payment_method": "account_money",
+                      "db_payment_id": 92,
+                      "message": "Faça login na sua conta Mercado Pago e conclua o pagamento com saldo ou cartão salvo.",
+                      "wallet": {
+                        "preference_id": "1234567890-aaaa-bbbb-cccc-ddddeeeeffff",
+                        "init_point": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=1234567890-aaaa-bbbb-cccc-ddddeeeeffff",
+                        "sandbox_init_point": "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=1234567890-aaaa-bbbb-cccc-ddddeeeeffff",
+                        "checkout_url": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=1234567890-aaaa-bbbb-cccc-ddddeeeeffff",
+                        "order_id": "ORD_abc123_1_5"
+                      }
+                    },
+                    "summary": "Wallet Brick redirect"
+                  },
+                  "paypalCreated": {
+                    "value": {
+                      "success": true,
+                      "payment_id": "ORDER-5O190127TN364715T",
+                      "order_id": "ORD_abc123_1_5",
+                      "status": "pending",
+                      "payment_method": "paypal",
+                      "db_payment_id": 91,
+                      "paypal": {
+                        "order_id": "ORDER-5O190127TN364715T",
+                        "client_id": "AeA1B2c3D4e5F6g7H8i9J0",
+                        "environment": "sandbox"
+                      }
+                    },
+                    "summary": "PayPal order created"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "validation": {
+                    "value": {
+                      "success": false,
+                      "message": "account_id, plan_id e gateway_id são obrigatórios"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Custom username already taken or reserved by a pending payment",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "usernameTaken": {
+                    "value": {
+                      "success": false,
+                      "message": "Usuário já está em uso. Escolha outro."
+                    },
+                    "summary": "Username already taken"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-request-examples": {
+          "pix": "examples/payment-pix-request.json",
+          "creditCard": "examples/payment-card-request.json",
+          "pixCustomCredentials": "examples/payment-pix-custom-credentials-request.json",
+          "paypal": "examples/payment-paypal-request.json",
+          "wallet": "examples/payment-wallet-request.json",
+          "oxxo": "examples/payment-oxxo-request.json"
+        },
+        "x-veltrix-response-examples": {
+          "pixCreated": "examples/payment-pix-response.json",
+          "cardCreated": "examples/payment-card-response.json",
+          "ticketCreated": "examples/payment-ticket-response.json",
+          "walletCreated": "examples/payment-wallet-response.json",
+          "paypalCreated": "examples/payment-paypal-create-response.json"
+        }
+      }
+    },
+    "/public/sales/{slug}/message-templates": {
+      "get": {
+        "operationId": "salesMessageTemplates",
+        "tags": [
+          "account-sales"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "accountSales",
+        "x-veltrix-endpoint-id": "salesMessageTemplates",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.accountSales.salesMessageTemplates",
+        "x-veltrix-rate-limit": {
+          "key": "public_get_plans",
+          "limit": 60,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Account Sales",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": "#/components/schemas/SlugParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post-sale message templates",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/MessageTemplatesResponse",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "templates": {
+                          "template_sale_message_whatsapp": "Olá {username}! Sua conta foi criada. Validade: {expiration}",
+                          "template_renewal_message_whatsapp": "Renovação confirmada para {username}."
+                        },
+                        "app_download_link": "https://example.com/app"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-response-examples": {
+          "default": "examples/sales-message-templates-response.json"
+        }
+      }
+    },
+    "/public/reseller-sales/{slug}/plans": {
+      "get": {
+        "operationId": "resellerPlans",
+        "tags": [
+          "reseller-sales"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "resellerSales",
+        "x-veltrix-endpoint-id": "resellerPlans",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.resellerSales.resellerPlans",
+        "x-veltrix-rate-limit": {
+          "key": "public_get_plans",
+          "limit": 60,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Reseller Sales",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": "#/components/schemas/SlugParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reseller plans",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/SalesPlansResponse",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": true,
+                      "plans": [
+                        {
+                          "id": 5,
+                          "name": "Revenda 100 créditos",
+                          "price": "199.90",
+                          "currency": "BRL",
+                          "type": "credit",
+                          "credits_amount": 100
+                        },
+                        {
+                          "id": 6,
+                          "name": "Revenda assinatura 30 dias",
+                          "price": "149.90",
+                          "currency": "BRL",
+                          "type": "subscribe",
+                          "duration_days": 30,
+                          "login_limit": 50
+                        }
+                      ],
+                      "seller": {
+                        "name": "loja-demo",
+                        "email": "vendedor@example.com"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-response-examples": {
+          "default": "examples/reseller-plans-response.json"
+        }
+      }
+    },
+    "/public/reseller-sales/{slug}/payment-methods": {
+      "get": {
+        "operationId": "resellerPaymentMethods",
+        "tags": [
+          "reseller-sales"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "resellerSales",
+        "x-veltrix-endpoint-id": "resellerPaymentMethods",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.resellerSales.resellerPaymentMethods",
+        "x-veltrix-rate-limit": {
+          "key": "public_get_plans",
+          "limit": 60,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Reseller Sales",
+        "x-veltrix-guide-refs": [
+          "payment-methods"
+        ],
+        "x-veltrix-query-hints": {
+          "amount": "paymentMethodsAmount"
+        },
+        "x-veltrix-query-examples": {
+          "amount": "199.90"
+        },
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": "#/components/schemas/SlugParam"
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment methods",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/SalesPaymentMethodsResponse",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "methods": [
+                          {
+                            "method_id": "pix",
+                            "name": "PIX",
+                            "type": "instant",
+                            "description": "Pagamento instantâneo via PIX",
+                            "min_amount": "0.01",
+                            "max_amount": "500000.00",
+                            "gateway_id": 1,
+                            "gateway_provider": "mercadopago",
+                            "selection_key": "1:pix"
+                          },
+                          {
+                            "method_id": "credit_card",
+                            "name": "Cartão de Crédito",
+                            "type": "card",
+                            "description": "Visa, Mastercard, Elo, Amex e Hipercard",
+                            "min_amount": "1.00",
+                            "max_amount": "500000.00",
+                            "gateway_id": 1,
+                            "gateway_provider": "mercadopago",
+                            "selection_key": "1:credit_card"
+                          },
+                          {
+                            "method_id": "paypal",
+                            "name": "PayPal",
+                            "type": "wallet",
+                            "description": "Pague com conta PayPal ou cartão",
+                            "min_amount": "0.01",
+                            "max_amount": "999999.99",
+                            "gateway_id": 2,
+                            "gateway_provider": "paypal",
+                            "selection_key": "2:paypal"
+                          }
+                        ],
+                        "gateways": [
+                          {
+                            "id": 1,
+                            "provider": "mercadopago",
+                            "region": "BR",
+                            "currency": "BRL",
+                            "mp_public_key": "APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                            "payer_document": {
+                              "type": "CPF",
+                              "label": "CPF",
+                              "min_len": 11,
+                              "max_len": 11,
+                              "charset": "digits"
+                            },
+                            "payer_document_rules": {
+                              "pix": "payment",
+                              "credit_card": "payment"
+                            },
+                            "mp_credential_environment": "production"
+                          },
+                          {
+                            "id": 2,
+                            "provider": "paypal",
+                            "region": "BR",
+                            "currency": "BRL",
+                            "paypal_client_id": "sandbox-client-id",
+                            "paypal_environment": "sandbox",
+                            "payer_document_rules": {}
+                          }
+                        ],
+                        "gateway": {
+                          "id": 1,
+                          "provider": "mercadopago",
+                          "region": "BR",
+                          "currency": "BRL",
+                          "mp_public_key": "APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                          "payer_document": {
+                            "type": "CPF",
+                            "label": "CPF",
+                            "min_len": 11,
+                            "max_len": 11,
+                            "charset": "digits"
+                          },
+                          "payer_document_rules": {
+                            "pix": "payment",
+                            "credit_card": "payment"
+                          },
+                          "mp_credential_environment": "production"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-response-examples": {
+          "default": "examples/payment-methods-response.json"
+        }
+      }
+    },
+    "/public/reseller-sales/{slug}/coupons/validate": {
+      "post": {
+        "operationId": "resellerCouponValidate",
+        "tags": [
+          "reseller-sales"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "resellerSales",
+        "x-veltrix-endpoint-id": "resellerCouponValidate",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.resellerSales.resellerCouponValidate",
+        "x-veltrix-rate-limit": {
+          "key": "coupon_validate_public",
+          "limit": 20,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Reseller Sales",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": "#/components/schemas/SlugParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "examples": {
+                "default": {
+                  "value": {
+                    "code": "PROMO10",
+                    "plan_id": 1,
+                    "amount": 29.9
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Coupon valid",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": true,
+                      "message": "Cupom válido",
+                      "data": {
+                        "code": "PROMO10",
+                        "coupon_code": "PROMO10",
+                        "discount_type": "percent",
+                        "original_amount": 29.9,
+                        "discount_amount": 2.99,
+                        "final_amount": 26.91,
+                        "currency": "BRL"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-request-examples": {
+          "default": "examples/coupon-validate-request.json"
+        },
+        "x-veltrix-response-examples": {
+          "default": "examples/coupon-validate-response.json"
+        }
+      }
+    },
+    "/public/reseller-sales/{slug}/payment": {
+      "post": {
+        "operationId": "resellerCreatePayment",
+        "tags": [
+          "reseller-sales"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "resellerSales",
+        "x-veltrix-endpoint-id": "resellerPayment",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.resellerSales.resellerPayment",
+        "x-veltrix-rate-limit": {
+          "key": "public_create_payment",
+          "limit": 10,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Reseller Sales",
+        "x-veltrix-guide-refs": [
+          "reseller-sales-flow",
+          "payment-methods",
+          "payment-polling"
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": "#/components/schemas/SlugParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "plan_id",
+                  "gateway_id",
+                  "payment_method_type",
+                  "reseller_username",
+                  "reseller_email",
+                  "reseller_password"
+                ],
+                "properties": {
+                  "plan_id": {
+                    "type": "integer"
+                  },
+                  "gateway_id": {
+                    "type": "integer"
+                  },
+                  "payment_method_type": {
+                    "type": "string",
+                    "description": "Required. Use an exact method_id returned by this seller's GET payment-methods catalog. IDs vary by active gateway, region, selected methods, and amount; the examples are not an exhaustive list."
+                  },
+                  "reseller_username": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]{3,32}$"
+                  },
+                  "reseller_email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "reseller_password": {
+                    "type": "string",
+                    "minLength": 6
+                  },
+                  "customer_name": {
+                    "type": "string"
+                  },
+                  "customer_email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "customer_cpf": {
+                    "type": "string",
+                    "description": "Customer document required only when the selected gateway/method rules require it."
+                  },
+                  "identification_type": {
+                    "type": "string",
+                    "description": "Document type from the selected gateway's payer_document field."
+                  },
+                  "card_token": {
+                    "type": "string",
+                    "description": "Mercado Pago SDK token; never send raw card number or CVV."
+                  },
+                  "mp_payment_method_id": {
+                    "type": "string"
+                  },
+                  "installments": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "issuer_id": {
+                    "type": "string"
+                  },
+                  "issuer_verified": {
+                    "type": "boolean"
+                  },
+                  "cardholder_name": {
+                    "type": "string"
+                  },
+                  "mp_public_key_used": {
+                    "type": "string"
+                  },
+                  "mp_device_session_id": {
+                    "type": "string",
+                    "description": "Send in production Mercado Pago card checkouts."
+                  },
+                  "return_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "failure_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "pending_url": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              },
+              "examples": {
+                "pix": {
+                  "value": {
+                    "plan_id": 5,
+                    "gateway_id": 1,
+                    "payment_method_type": "pix",
+                    "reseller_username": "novorevenda",
+                    "reseller_email": "revenda@gmail.com",
+                    "reseller_password": "senha123",
+                    "customer_name": "João Silva",
+                    "customer_email": "cliente@gmail.com",
+                    "customer_cpf": "12345678909",
+                    "identification_type": "CPF"
+                  },
+                  "summary": "PIX"
+                },
+                "card": {
+                  "value": {
+                    "plan_id": 5,
+                    "gateway_id": 1,
+                    "payment_method_type": "credit_card",
+                    "reseller_username": "novorevenda",
+                    "reseller_email": "revenda@gmail.com",
+                    "reseller_password": "senha123",
+                    "customer_name": "João Silva",
+                    "customer_email": "cliente@gmail.com",
+                    "customer_cpf": "12345678909",
+                    "identification_type": "CPF",
+                    "card_token": "4062eff189b94b020113c8add0a208ab",
+                    "mp_payment_method_id": "master",
+                    "installments": 1,
+                    "cardholder_name": "João Silva",
+                    "mp_public_key_used": "APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                  },
+                  "summary": "Tokenized credit card"
+                },
+                "paypal": {
+                  "value": {
+                    "plan_id": 5,
+                    "gateway_id": 2,
+                    "payment_method_type": "paypal",
+                    "reseller_username": "novorevenda",
+                    "reseller_email": "revenda@gmail.com",
+                    "reseller_password": "senha123",
+                    "customer_email": "cliente@gmail.com"
+                  },
+                  "summary": "PayPal order (then capture)"
+                },
+                "wallet": {
+                  "value": {
+                    "plan_id": 5,
+                    "gateway_id": 1,
+                    "payment_method_type": "account_money",
+                    "reseller_username": "novorevenda",
+                    "reseller_email": "revenda@gmail.com",
+                    "reseller_password": "senha123",
+                    "customer_email": "cliente@gmail.com",
+                    "return_url": "https://minhaloja.com/obrigado"
+                  },
+                  "summary": "Mercado Pago Wallet"
+                },
+                "cashTicket": {
+                  "value": {
+                    "plan_id": 5,
+                    "gateway_id": 3,
+                    "payment_method_type": "paycash",
+                    "reseller_username": "novorevenda",
+                    "reseller_email": "revenda@gmail.com",
+                    "reseller_password": "senha123",
+                    "customer_name": "Maria Garcia",
+                    "customer_email": "cliente@gmail.com",
+                    "customer_cpf": "GAML850101HDFRRN09",
+                    "identification_type": "CURP"
+                  },
+                  "summary": "PayCash ticket (Mexico)"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment created",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/PaymentCreatePixResponse",
+                "examples": {
+                  "pixCreated": {
+                    "value": {
+                      "success": true,
+                      "payment_id": "1234567890",
+                      "order_id": "ORD_abc123_1_5",
+                      "status": "pending",
+                      "payment_method": "pix",
+                      "db_payment_id": 87,
+                      "pix": {
+                        "qr_code_base64": "iVBORw0KGgoAAAANSUhEUg...",
+                        "qr_code_text": "00020126580014BR.GOV.BCB.PIX...",
+                        "expires_at": "2026-07-17T21:30:00+00:00"
+                      }
+                    }
+                  },
+                  "cardCreated": {
+                    "value": {
+                      "success": true,
+                      "payment_id": "1234567890",
+                      "order_id": "ORD_abc123_1_5",
+                      "status": "pending",
+                      "payment_method": "credit_card",
+                      "db_payment_id": 88,
+                      "message": "Pagamento em análise. Aguarde a confirmação.",
+                      "card": {
+                        "status": "pending",
+                        "status_detail": "pending_contingency"
+                      }
+                    }
+                  },
+                  "ticketCreated": {
+                    "value": {
+                      "success": true,
+                      "payment_id": "9876543210",
+                      "order_id": "ORD_abc123_1_5",
+                      "status": "pending",
+                      "payment_method": "oxxo",
+                      "db_payment_id": 93,
+                      "payment_url": "https://www.mercadopago.com.mx/payments/9876543210/ticket?caller_id=1&hash=abc",
+                      "ticket": {
+                        "payment_url": "https://www.mercadopago.com.mx/payments/9876543210/ticket?caller_id=1&hash=abc",
+                        "barcode": "12345678901234567890",
+                        "expires_at": "2026-07-20 20:00:00"
+                      }
+                    }
+                  },
+                  "walletCreated": {
+                    "value": {
+                      "success": true,
+                      "payment_id": "ORD_abc123_1_5",
+                      "order_id": "ORD_abc123_1_5",
+                      "status": "pending",
+                      "payment_method": "account_money",
+                      "db_payment_id": 92,
+                      "message": "Faça login na sua conta Mercado Pago e conclua o pagamento com saldo ou cartão salvo.",
+                      "wallet": {
+                        "preference_id": "1234567890-aaaa-bbbb-cccc-ddddeeeeffff",
+                        "init_point": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=1234567890-aaaa-bbbb-cccc-ddddeeeeffff",
+                        "sandbox_init_point": "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=1234567890-aaaa-bbbb-cccc-ddddeeeeffff",
+                        "checkout_url": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=1234567890-aaaa-bbbb-cccc-ddddeeeeffff",
+                        "order_id": "ORD_abc123_1_5"
+                      }
+                    }
+                  },
+                  "paypalCreated": {
+                    "value": {
+                      "success": true,
+                      "payment_id": "ORDER-5O190127TN364715T",
+                      "order_id": "ORD_abc123_1_5",
+                      "status": "pending",
+                      "payment_method": "paypal",
+                      "db_payment_id": 91,
+                      "paypal": {
+                        "order_id": "ORDER-5O190127TN364715T",
+                        "client_id": "AeA1B2c3D4e5F6g7H8i9J0",
+                        "environment": "sandbox"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "validation": {
+                    "value": {
+                      "success": false,
+                      "message": "account_id, plan_id e gateway_id são obrigatórios"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-request-examples": {
+          "pix": "examples/reseller-payment-pix-request.json",
+          "card": "examples/reseller-payment-card-request.json",
+          "paypal": "examples/reseller-payment-paypal-request.json",
+          "wallet": "examples/reseller-payment-wallet-request.json",
+          "cashTicket": "examples/reseller-payment-ticket-request.json"
+        },
+        "x-veltrix-response-examples": {
+          "pixCreated": "examples/payment-pix-response.json",
+          "cardCreated": "examples/payment-card-response.json",
+          "ticketCreated": "examples/payment-ticket-response.json",
+          "walletCreated": "examples/payment-wallet-response.json",
+          "paypalCreated": "examples/payment-paypal-create-response.json"
+        }
+      }
+    },
+    "/public/reseller-sales/check-username": {
+      "get": {
+        "operationId": "resellerCheckUsername",
+        "tags": [
+          "reseller-sales"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "resellerSales",
+        "x-veltrix-endpoint-id": "resellerCheckUsername",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.resellerSales.resellerCheckUsername",
+        "x-veltrix-rate-limit": {
+          "key": "public_check_username",
+          "limit": 30,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Reseller Sales",
+        "x-veltrix-query-examples": {
+          "username": "novorevenda"
+        },
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9]{3,32}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Username availability",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ResellerCheckAvailabilityResponse",
+                "examples": {
+                  "available": {
+                    "value": {
+                      "success": true,
+                      "available": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-response-examples": {
+          "available": "examples/reseller-check-username-response.json"
+        }
+      }
+    },
+    "/public/reseller-sales/check-email": {
+      "get": {
+        "operationId": "resellerCheckEmail",
+        "tags": [
+          "reseller-sales"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "resellerSales",
+        "x-veltrix-endpoint-id": "resellerCheckEmail",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.resellerSales.resellerCheckEmail",
+        "x-veltrix-rate-limit": {
+          "key": "public_check_email",
+          "limit": 30,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Reseller Sales",
+        "x-veltrix-query-examples": {
+          "email": "revenda@gmail.com"
+        },
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email availability",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ResellerCheckAvailabilityResponse",
+                "examples": {
+                  "unavailable": {
+                    "value": {
+                      "success": true,
+                      "available": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-response-examples": {
+          "unavailable": "examples/reseller-check-email-response.json"
+        }
+      }
+    },
+    "/public/payment/{paymentId}/status": {
+      "get": {
+        "operationId": "paymentStatus",
+        "summary": "Poll payment status and credentials",
+        "description": "Look up by gateway `payment_id`, internal `order_id` (`ORD_…`), wallet\n`preference_id`, or numeric `db_payment_id`. Wallet checkout has no Mercado Pago\npayment yet — poll with the returned `payment_id` (same as `order_id`).\n\nSSH/V2Ray credentials are returned only when `status` is `approved` and the `account` object is present.\nIf `provisioning` is `true`, the payment is approved but the account is still being created — keep polling.\nCreate-payment (`POST /public/sales/{slug}/payment`) never returns credentials.\n",
+        "tags": [
+          "payment"
+        ],
+        "x-veltrix-auth": "unguarded",
+        "x-veltrix-section": "payment",
+        "x-veltrix-endpoint-id": "paymentStatus",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.payment.paymentStatus",
+        "x-veltrix-rate-limit": {
+          "key": "public_payment_status",
+          "limit": 60,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Payment",
+        "x-veltrix-guide-refs": [
+          "payment-polling"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "paymentId",
+            "in": "path",
+            "required": true,
+            "schema": "#/components/schemas/PaymentIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment status. Credentials are in `account` only after approved provisioning.",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/PaymentStatusResponse",
+                "examples": {
+                  "pending": {
+                    "value": {
+                      "success": true,
+                      "status": "pending",
+                      "amount": 29.9,
+                      "product_type": "account",
+                      "created_at": "2026-07-17 20:00:00"
+                    },
+                    "summary": "Pending payment (no credentials yet)"
+                  },
+                  "approvedProvisioning": {
+                    "value": {
+                      "success": true,
+                      "status": "approved",
+                      "amount": 29.9,
+                      "product_type": "account",
+                      "provisioning": true,
+                      "created_at": "2026-07-17 20:00:30"
+                    },
+                    "summary": "Approved, account still provisioning"
+                  },
+                  "approvedAccount": {
+                    "value": {
+                      "success": true,
+                      "status": "approved",
+                      "amount": 29.9,
+                      "product_type": "account",
+                      "account": {
+                        "type": "combo",
+                        "username": "cliente123",
+                        "password": "senha123",
+                        "v2ray_uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                        "connection_limit": 1,
+                        "expires_at": "2026-08-16 20:01:00"
+                      },
+                      "email_sent": true,
+                      "created_at": "2026-07-17 20:01:00"
+                    },
+                    "summary": "Approved with SSH/V2Ray credentials"
+                  },
+                  "approvedReseller": {
+                    "value": {
+                      "success": true,
+                      "status": "approved",
+                      "amount": 59.9,
+                      "product_type": "reseller",
+                      "reseller": {
+                        "username": "revenda123",
+                        "email": "revenda@example.com",
+                        "type": "subscribe",
+                        "credits_balance": 0,
+                        "login_limit": 20,
+                        "expires_at": "2026-08-16 20:01:00",
+                        "panel_url": "https://panel.example.com",
+                        "category_name": "Principal"
+                      },
+                      "email_sent": true,
+                      "created_at": "2026-07-17 20:01:00"
+                    },
+                    "summary": "Approved reseller subscription purchase"
+                  },
+                  "approvedResellerCredits": {
+                    "value": {
+                      "success": true,
+                      "status": "approved",
+                      "amount": 30,
+                      "product_type": "reseller_credits",
+                      "credits": {
+                        "credits_added": 10,
+                        "credits_balance": 25
+                      },
+                      "email_sent": true,
+                      "created_at": "2026-07-17 20:01:00"
+                    },
+                    "summary": "Approved reseller credit purchase"
+                  },
+                  "approvedResellerRenewal": {
+                    "value": {
+                      "success": true,
+                      "status": "approved",
+                      "amount": 59.9,
+                      "product_type": "reseller_renewal",
+                      "reseller_renewal": true,
+                      "reseller": {
+                        "expires_at": "2026-10-16 20:01:00",
+                        "login_limit": 20,
+                        "duration_days": 90
+                      },
+                      "created_at": "2026-07-17 20:01:00"
+                    },
+                    "summary": "Approved reseller renewal"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing payment reference",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": false,
+                      "message": "Payment ID é obrigatório"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Payment reference was not found",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": false,
+                      "message": "Pagamento não encontrado"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded; retry after the supplied interval",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/RateLimitError",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "error": "Too Many Requests",
+                      "message": "Limite de requisições excedido. Aguarde antes de tentar novamente.",
+                      "retry_after": 60
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Status lookup failed",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": false,
+                      "message": "Erro ao verificar status do pagamento"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-response-examples": {
+          "pending": "examples/payment-status-pending.json",
+          "approvedProvisioning": "examples/payment-status-approved-provisioning.json",
+          "approvedAccount": "examples/payment-status-approved-account.json",
+          "approvedReseller": "examples/payment-status-approved-reseller.json",
+          "approvedResellerCredits": "examples/payment-status-approved-reseller-credits.json",
+          "approvedResellerRenewal": "examples/payment-status-approved-reseller-renewal.json"
+        }
+      }
+    },
+    "/public/payment/{paymentId}/cancel": {
+      "post": {
+        "operationId": "paymentCancel",
+        "tags": [
+          "payment"
+        ],
+        "x-veltrix-auth": "unguarded",
+        "x-veltrix-section": "payment",
+        "x-veltrix-endpoint-id": "paymentCancel",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.payment.paymentCancel",
+        "x-veltrix-rate-limit": {
+          "key": "public_cancel_payment",
+          "limit": 20,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Payment",
+        "security": [],
+        "parameters": [
+          {
+            "name": "paymentId",
+            "in": "path",
+            "required": true,
+            "schema": "#/components/schemas/PaymentIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "message"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": true,
+                      "message": "Pagamento cancelado com sucesso"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing payment reference",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": false,
+                      "message": "Payment ID é obrigatório"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Payment is not pending, was already processed, or was not found",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": false,
+                      "message": "Pagamento não encontrado ou já processado"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded; retry after the supplied interval",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/RateLimitError",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "error": "Too Many Requests",
+                      "message": "Limite de requisições excedido. Aguarde antes de tentar novamente.",
+                      "retry_after": 60
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Cancellation failed",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": false,
+                      "message": "Erro ao cancelar pagamento"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-response-examples": {
+          "default": "examples/payment-cancel-response.json"
+        }
+      }
+    },
+    "/public/payment/{paymentId}/paypal/capture": {
+      "post": {
+        "operationId": "paymentPaypalCapture",
+        "tags": [
+          "payment"
+        ],
+        "x-veltrix-auth": "unguarded",
+        "x-veltrix-section": "payment",
+        "x-veltrix-endpoint-id": "paymentPaypalCapture",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.payment.paymentPaypalCapture",
+        "x-veltrix-rate-limit": {
+          "key": "public_paypal_capture",
+          "limit": 30,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Payment",
+        "x-veltrix-guide-refs": [
+          "payment-methods",
+          "payment-polling"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "paymentId",
+            "in": "path",
+            "required": true,
+            "schema": "#/components/schemas/PaymentIdParam"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "description": "Optional when the PayPal order ID is already supplied in the path.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "paypal_order_id": {
+                    "type": "string",
+                    "description": "PayPal order ID returned by checkout; defaults to the path parameter when omitted."
+                  }
+                }
+              },
+              "examples": {
+                "default": {
+                  "value": {
+                    "paypal_order_id": "PAYPAL_ORDER_ID"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Capture accepted. A pending result still requires polling payment status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "status",
+                    "payment_id"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "approved",
+                        "pending"
+                      ]
+                    },
+                    "payment_id": {
+                      "type": "string",
+                      "description": "PayPal order ID"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "approved": {
+                    "value": {
+                      "success": true,
+                      "payment_id": "PAYPAL_ORDER_ID",
+                      "status": "approved"
+                    },
+                    "summary": "Capture approved"
+                  },
+                  "pending": {
+                    "value": {
+                      "success": true,
+                      "payment_id": "PAYPAL_ORDER_ID",
+                      "status": "pending"
+                    },
+                    "summary": "Capture accepted but still pending"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Order mismatch, non-PayPal payment, or payment is not pending",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": false,
+                      "message": "Pagamento não está pendente"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Payment or PayPal credentials were not found",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": false,
+                      "message": "Pagamento não encontrado"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded; retry after the supplied interval",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/RateLimitError",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "error": "Too Many Requests",
+                      "message": "Limite de requisições excedido. Aguarde antes de tentar novamente.",
+                      "retry_after": 60
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Capture failed unexpectedly",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": false,
+                      "message": "Erro ao capturar pagamento PayPal"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-request-examples": {
+          "default": "examples/paypal-capture-request.json"
+        },
+        "x-veltrix-response-examples": {
+          "approved": "examples/paypal-capture-response.json",
+          "pending": "examples/paypal-capture-pending-response.json"
+        }
+      }
+    },
+    "/public/renewal/search": {
+      "post": {
+        "operationId": "renewalSearchAccount",
+        "tags": [
+          "renewal"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "renewal",
+        "x-veltrix-endpoint-id": "renewalSearch",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.renewal.renewalSearch",
+        "x-veltrix-rate-limit": {
+          "key": "public_renewal_search",
+          "limit": 20,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Renewal",
+        "x-veltrix-guide-refs": [
+          "renewal-flow"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "examples": {
+                "default": {
+                  "value": {
+                    "identifier": "usuario123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Account found",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/RenewalSearchResponse",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": true,
+                      "account": {
+                        "id": 42,
+                        "username": "usuario123",
+                        "v2ray_uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                        "type": "combo",
+                        "category_id": 1,
+                        "created_by": 1,
+                        "connection_limit": 1,
+                        "expires_at": "2026-07-10 12:00:00",
+                        "expiration_date": "2026-07-10 12:00:00",
+                        "is_active": 1,
+                        "is_expired": false
+                      },
+                      "seller": {
+                        "id": 1,
+                        "username": "loja-demo",
+                        "role": "admin",
+                        "category_id": 1
+                      },
+                      "plans": [
+                        {
+                          "id": 1,
+                          "name": "Renovação 30 dias",
+                          "type": "combo",
+                          "duration_days": 30,
+                          "price": 29.9,
+                          "currency": "BRL"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope"
+              }
+            }
+          }
+        },
+        "x-veltrix-request-examples": {
+          "default": "examples/renewal-search-request.json"
+        },
+        "x-veltrix-response-examples": {
+          "default": "examples/renewal-search-response.json"
+        }
+      }
+    },
+    "/public/renewal/plans": {
+      "get": {
+        "operationId": "renewalGetPlans",
+        "tags": [
+          "renewal"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "renewal",
+        "x-veltrix-endpoint-id": "renewalPlans",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.renewal.renewalPlans",
+        "x-veltrix-rate-limit": {
+          "key": "public_get_plans",
+          "limit": 60,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Renewal",
+        "x-veltrix-query-examples": {
+          "seller_id": "1",
+          "type": "combo"
+        },
+        "parameters": [
+          {
+            "name": "seller_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": "ssh"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Renewal plans",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/RenewalPlansResponse",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": true,
+                      "plans": [
+                        {
+                          "id": 1,
+                          "name": "Renovação 30 dias",
+                          "type": "combo",
+                          "duration_days": 30,
+                          "price": 29.9,
+                          "currency": "BRL"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-response-examples": {
+          "default": "examples/renewal-plans-response.json"
+        }
+      }
+    },
+    "/public/renewal/coupons/validate": {
+      "post": {
+        "operationId": "renewalCouponValidate",
+        "tags": [
+          "renewal"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "renewal",
+        "x-veltrix-endpoint-id": "renewalCouponValidate",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.renewal.renewalCouponValidate",
+        "x-veltrix-rate-limit": {
+          "key": "coupon_validate_public",
+          "limit": 20,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Renewal",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "code",
+                  "plan_id",
+                  "account_id"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "plan_id": {
+                    "type": "integer"
+                  },
+                  "account_id": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "examples": {
+                "default": {
+                  "value": {
+                    "code": "PROMO10",
+                    "plan_id": 1,
+                    "account_id": 42
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Coupon valid",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": true,
+                      "message": "Cupom válido",
+                      "data": {
+                        "code": "PROMO10",
+                        "coupon_code": "PROMO10",
+                        "discount_type": "percent",
+                        "original_amount": 29.9,
+                        "discount_amount": 2.99,
+                        "final_amount": 26.91,
+                        "currency": "BRL"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-request-examples": {
+          "default": "examples/renewal-coupon-validate-request.json"
+        },
+        "x-veltrix-response-examples": {
+          "default": "examples/coupon-validate-response.json"
+        }
+      }
+    },
+    "/public/renewal/payment-methods": {
+      "get": {
+        "operationId": "renewalPaymentMethods",
+        "tags": [
+          "renewal"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "renewal",
+        "x-veltrix-endpoint-id": "renewalPaymentMethods",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.renewal.renewalPaymentMethods",
+        "x-veltrix-rate-limit": {
+          "key": "public_get_plans",
+          "limit": 60,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Renewal",
+        "x-veltrix-guide-refs": [
+          "payment-methods"
+        ],
+        "x-veltrix-query-hints": {
+          "amount": "paymentMethodsAmount",
+          "seller_id": "renewalSellerId"
+        },
+        "x-veltrix-query-examples": {
+          "seller_id": "1",
+          "amount": "29.90"
+        },
+        "parameters": [
+          {
+            "name": "seller_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment methods",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/SalesPaymentMethodsResponse",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "methods": [
+                          {
+                            "method_id": "pix",
+                            "name": "PIX",
+                            "type": "instant",
+                            "description": "Pagamento instantâneo via PIX",
+                            "min_amount": "0.01",
+                            "max_amount": "500000.00",
+                            "gateway_id": 1,
+                            "gateway_provider": "mercadopago",
+                            "selection_key": "1:pix"
+                          },
+                          {
+                            "method_id": "credit_card",
+                            "name": "Cartão de Crédito",
+                            "type": "card",
+                            "description": "Visa, Mastercard, Elo, Amex e Hipercard",
+                            "min_amount": "1.00",
+                            "max_amount": "500000.00",
+                            "gateway_id": 1,
+                            "gateway_provider": "mercadopago",
+                            "selection_key": "1:credit_card"
+                          },
+                          {
+                            "method_id": "paypal",
+                            "name": "PayPal",
+                            "type": "wallet",
+                            "description": "Pague com conta PayPal ou cartão",
+                            "min_amount": "0.01",
+                            "max_amount": "999999.99",
+                            "gateway_id": 2,
+                            "gateway_provider": "paypal",
+                            "selection_key": "2:paypal"
+                          }
+                        ],
+                        "gateways": [
+                          {
+                            "id": 1,
+                            "provider": "mercadopago",
+                            "region": "BR",
+                            "currency": "BRL",
+                            "mp_public_key": "APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                            "payer_document": {
+                              "type": "CPF",
+                              "label": "CPF",
+                              "min_len": 11,
+                              "max_len": 11,
+                              "charset": "digits"
+                            },
+                            "payer_document_rules": {
+                              "pix": "payment",
+                              "credit_card": "payment"
+                            },
+                            "mp_credential_environment": "production"
+                          },
+                          {
+                            "id": 2,
+                            "provider": "paypal",
+                            "region": "BR",
+                            "currency": "BRL",
+                            "paypal_client_id": "sandbox-client-id",
+                            "paypal_environment": "sandbox",
+                            "payer_document_rules": {}
+                          }
+                        ],
+                        "gateway": {
+                          "id": 1,
+                          "provider": "mercadopago",
+                          "region": "BR",
+                          "currency": "BRL",
+                          "mp_public_key": "APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                          "payer_document": {
+                            "type": "CPF",
+                            "label": "CPF",
+                            "min_len": 11,
+                            "max_len": 11,
+                            "charset": "digits"
+                          },
+                          "payer_document_rules": {
+                            "pix": "payment",
+                            "credit_card": "payment"
+                          },
+                          "mp_credential_environment": "production"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-response-examples": {
+          "default": "examples/payment-methods-response.json"
+        }
+      }
+    },
+    "/public/renewal/payment": {
+      "post": {
+        "operationId": "renewalCreatePayment",
+        "tags": [
+          "renewal"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "renewal",
+        "x-veltrix-endpoint-id": "renewalPayment",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.renewal.renewalPayment",
+        "x-veltrix-rate-limit": {
+          "key": "public_renewal_payment",
+          "limit": 10,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Renewal",
+        "x-veltrix-guide-refs": [
+          "renewal-flow",
+          "payment-methods",
+          "payment-polling"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "account_id",
+                  "plan_id",
+                  "gateway_id",
+                  "payment_method_type"
+                ],
+                "properties": {
+                  "account_id": {
+                    "type": "integer"
+                  },
+                  "plan_id": {
+                    "type": "integer"
+                  },
+                  "gateway_id": {
+                    "type": "integer"
+                  },
+                  "payment_method_type": {
+                    "type": "string",
+                    "description": "Required. Use an exact method_id from the live catalog at GET /public/renewal/payment-methods. IDs vary by active gateway, region, selected methods, and amount; the examples are not an exhaustive list."
+                  },
+                  "customer_name": {
+                    "type": "string"
+                  },
+                  "customer_email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "customer_cpf": {
+                    "type": "string",
+                    "description": "Customer document required only when the selected gateway/method rules require it."
+                  },
+                  "identification_type": {
+                    "type": "string",
+                    "description": "Document type from the selected gateway's payer_document field."
+                  },
+                  "card_token": {
+                    "type": "string",
+                    "description": "Mercado Pago SDK token; never send raw card number or CVV."
+                  },
+                  "mp_payment_method_id": {
+                    "type": "string"
+                  },
+                  "installments": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "issuer_id": {
+                    "type": "string"
+                  },
+                  "issuer_verified": {
+                    "type": "boolean"
+                  },
+                  "cardholder_name": {
+                    "type": "string"
+                  },
+                  "mp_public_key_used": {
+                    "type": "string"
+                  },
+                  "mp_device_session_id": {
+                    "type": "string",
+                    "description": "Send in production Mercado Pago card checkouts."
+                  },
+                  "return_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "failure_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "pending_url": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              },
+              "examples": {
+                "pix": {
+                  "value": {
+                    "account_id": 42,
+                    "plan_id": 1,
+                    "gateway_id": 1,
+                    "payment_method_type": "pix",
+                    "customer_name": "João Silva",
+                    "customer_email": "cliente@gmail.com",
+                    "customer_cpf": "12345678909",
+                    "identification_type": "CPF"
+                  },
+                  "summary": "PIX renewal"
+                },
+                "card": {
+                  "value": {
+                    "account_id": 42,
+                    "plan_id": 1,
+                    "gateway_id": 1,
+                    "payment_method_type": "credit_card",
+                    "customer_name": "João Silva",
+                    "customer_email": "cliente@gmail.com",
+                    "customer_cpf": "12345678909",
+                    "identification_type": "CPF",
+                    "card_token": "4062eff189b94b020113c8add0a208ab",
+                    "mp_payment_method_id": "master",
+                    "installments": 1,
+                    "cardholder_name": "João Silva",
+                    "mp_public_key_used": "APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                  },
+                  "summary": "Tokenized credit card renewal"
+                },
+                "paypal": {
+                  "value": {
+                    "account_id": 42,
+                    "plan_id": 1,
+                    "gateway_id": 2,
+                    "payment_method_type": "paypal",
+                    "customer_email": "cliente@gmail.com"
+                  },
+                  "summary": "PayPal order renewal (then capture)"
+                },
+                "wallet": {
+                  "value": {
+                    "account_id": 42,
+                    "plan_id": 1,
+                    "gateway_id": 1,
+                    "payment_method_type": "account_money",
+                    "customer_email": "cliente@gmail.com",
+                    "return_url": "https://minhaloja.com/obrigado"
+                  },
+                  "summary": "Mercado Pago Wallet renewal"
+                },
+                "cashTicket": {
+                  "value": {
+                    "account_id": 42,
+                    "plan_id": 1,
+                    "gateway_id": 3,
+                    "payment_method_type": "paycash",
+                    "customer_name": "Maria Garcia",
+                    "customer_email": "cliente@gmail.com",
+                    "customer_cpf": "GAML850101HDFRRN09",
+                    "identification_type": "CURP"
+                  },
+                  "summary": "PayCash renewal ticket (Mexico)"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Renewal payment created",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/PaymentCreatePixResponse",
+                "examples": {
+                  "pixCreated": {
+                    "value": {
+                      "success": true,
+                      "payment_id": "1234567890",
+                      "order_id": "ORD_abc123_1_5",
+                      "status": "pending",
+                      "payment_method": "pix",
+                      "db_payment_id": 87,
+                      "pix": {
+                        "qr_code_base64": "iVBORw0KGgoAAAANSUhEUg...",
+                        "qr_code_text": "00020126580014BR.GOV.BCB.PIX...",
+                        "expires_at": "2026-07-17T21:30:00+00:00"
+                      }
+                    }
+                  },
+                  "cardCreated": {
+                    "value": {
+                      "success": true,
+                      "payment_id": "1234567890",
+                      "order_id": "ORD_abc123_1_5",
+                      "status": "pending",
+                      "payment_method": "credit_card",
+                      "db_payment_id": 88,
+                      "message": "Pagamento em análise. Aguarde a confirmação.",
+                      "card": {
+                        "status": "pending",
+                        "status_detail": "pending_contingency"
+                      }
+                    }
+                  },
+                  "ticketCreated": {
+                    "value": {
+                      "success": true,
+                      "payment_id": "9876543210",
+                      "order_id": "ORD_abc123_1_5",
+                      "status": "pending",
+                      "payment_method": "oxxo",
+                      "db_payment_id": 93,
+                      "payment_url": "https://www.mercadopago.com.mx/payments/9876543210/ticket?caller_id=1&hash=abc",
+                      "ticket": {
+                        "payment_url": "https://www.mercadopago.com.mx/payments/9876543210/ticket?caller_id=1&hash=abc",
+                        "barcode": "12345678901234567890",
+                        "expires_at": "2026-07-20 20:00:00"
+                      }
+                    }
+                  },
+                  "walletCreated": {
+                    "value": {
+                      "success": true,
+                      "payment_id": "ORD_abc123_1_5",
+                      "order_id": "ORD_abc123_1_5",
+                      "status": "pending",
+                      "payment_method": "account_money",
+                      "db_payment_id": 92,
+                      "message": "Faça login na sua conta Mercado Pago e conclua o pagamento com saldo ou cartão salvo.",
+                      "wallet": {
+                        "preference_id": "1234567890-aaaa-bbbb-cccc-ddddeeeeffff",
+                        "init_point": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=1234567890-aaaa-bbbb-cccc-ddddeeeeffff",
+                        "sandbox_init_point": "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=1234567890-aaaa-bbbb-cccc-ddddeeeeffff",
+                        "checkout_url": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=1234567890-aaaa-bbbb-cccc-ddddeeeeffff",
+                        "order_id": "ORD_abc123_1_5"
+                      }
+                    }
+                  },
+                  "paypalCreated": {
+                    "value": {
+                      "success": true,
+                      "payment_id": "ORDER-5O190127TN364715T",
+                      "order_id": "ORD_abc123_1_5",
+                      "status": "pending",
+                      "payment_method": "paypal",
+                      "db_payment_id": 91,
+                      "paypal": {
+                        "order_id": "ORDER-5O190127TN364715T",
+                        "client_id": "AeA1B2c3D4e5F6g7H8i9J0",
+                        "environment": "sandbox"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "validation": {
+                    "value": {
+                      "success": false,
+                      "message": "account_id, plan_id e gateway_id são obrigatórios"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-request-examples": {
+          "pix": "examples/renewal-payment-pix-request.json",
+          "card": "examples/renewal-payment-card-request.json",
+          "paypal": "examples/renewal-payment-paypal-request.json",
+          "wallet": "examples/renewal-payment-wallet-request.json",
+          "cashTicket": "examples/renewal-payment-ticket-request.json"
+        },
+        "x-veltrix-response-examples": {
+          "pixCreated": "examples/payment-pix-response.json",
+          "cardCreated": "examples/payment-card-response.json",
+          "ticketCreated": "examples/payment-ticket-response.json",
+          "walletCreated": "examples/payment-wallet-response.json",
+          "paypalCreated": "examples/payment-paypal-create-response.json"
+        }
+      }
+    },
+    "/public/test/{slug}/config": {
+      "get": {
+        "operationId": "testGetConfig",
+        "tags": [
+          "public-test"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "publicTest",
+        "x-veltrix-endpoint-id": "testConfig",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.publicTest.testConfig",
+        "x-veltrix-rate-limit": {
+          "key": "public_test_config",
+          "limit": 30,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Public Test",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": "#/components/schemas/SlugParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Test page configuration",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/PublicTestConfigResponse",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "globally_enabled": true,
+                        "seller_enabled": true,
+                        "enabled": true,
+                        "duration_hours": 3,
+                        "cooldown_hours": 24,
+                        "api_direct_cooldown": false,
+                        "include_v2ray": true,
+                        "trusted_email_domains": [
+                          "gmail.com",
+                          "outlook.com",
+                          "yahoo.com"
+                        ],
+                        "category_id": 1,
+                        "active_servers": 2,
+                        "seller": {
+                          "name": "loja-demo",
+                          "slug": "loja-demo"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-response-examples": {
+          "default": "examples/test-config-response.json"
+        }
+      }
+    },
+    "/public/test/{slug}/create": {
+      "post": {
+        "operationId": "testCreate",
+        "tags": [
+          "public-test"
+        ],
+        "summary": "Create a free trial (credentials by email)",
+        "description": "Creates a test account. Credentials are sent by e-mail only (never in this response).\n\nOptional SSH credentials: `username` and `password` (aliases `account_username`/`account_password`, `usuario`/`senha`).\nOmit them or send empty strings to keep random generation.\n\nUsername: `^[a-zA-Z0-9]{3,32}$` (letter case preserved). Reserved names (`root`, `admin`, …) are rejected.\nPassword: 6–64 characters, no control characters. Either field may be sent alone.\nDuplicate usernames (existing `users` row or pending payment reservation) return HTTP **409**.\n",
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "publicTest",
+        "x-veltrix-endpoint-id": "testCreate",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.publicTest.testCreate",
+        "x-veltrix-rate-limit": {
+          "key": "public_test_create",
+          "limit": 5,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Public Test",
+        "x-veltrix-guide-refs": [
+          "public-test-flow"
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": "#/components/schemas/SlugParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "include_v2ray": {
+                    "type": "boolean"
+                  },
+                  "username": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]{3,32}$",
+                    "description": "Optional SSH login. Letter case is preserved. Empty or omitted keeps random generation."
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 64,
+                    "description": "Optional SSH password. Empty or omitted keeps random generation."
+                  },
+                  "account_username": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]{3,32}$"
+                  },
+                  "account_password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 64
+                  },
+                  "usuario": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]{3,32}$"
+                  },
+                  "senha": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 64
+                  }
+                }
+              },
+              "examples": {
+                "default": {
+                  "value": {
+                    "email": "cliente@gmail.com",
+                    "phone": "5511999999999",
+                    "include_v2ray": true
+                  },
+                  "summary": "Random SSH credentials"
+                },
+                "customCredentials": {
+                  "value": {
+                    "email": "cliente@gmail.com",
+                    "phone": "5511999999999",
+                    "include_v2ray": true,
+                    "username": "joao123",
+                    "password": "senha123"
+                  },
+                  "summary": "Custom SSH username and password"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Test account created (credentials emailed)",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": true,
+                      "message": "Teste criado com sucesso",
+                      "data": {
+                        "delivery": "email",
+                        "email_masked": "c***@gmail.com",
+                        "expires_at": "2026-08-15T06:29:00+00:00",
+                        "validity_hours": 3
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "validation": {
+                    "value": {
+                      "success": false,
+                      "message": "account_id, plan_id e gateway_id são obrigatórios"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Custom username already taken or reserved by a pending payment",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "usernameTaken": {
+                    "value": {
+                      "success": false,
+                      "message": "Usuário já está em uso. Escolha outro."
+                    },
+                    "summary": "Username already taken"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-request-examples": {
+          "default": "examples/test-create-request.json",
+          "customCredentials": "examples/test-create-custom-credentials-request.json"
+        },
+        "x-veltrix-response-examples": {
+          "default": "examples/test-create-response.json"
+        }
+      }
+    },
+    "/public/test/{slug}/create-direct": {
+      "post": {
+        "operationId": "testCreateDirect",
+        "tags": [
+          "public-test"
+        ],
+        "summary": "Create a free trial (credentials in JSON)",
+        "description": "Creates a test account and returns credentials in the JSON response.\nAccepts **only** `X-Public-Api-Token` (no PWA session).\n\nOptional SSH credentials: `username` and `password` (aliases `account_username`/`account_password`, `usuario`/`senha`).\nSame validation and 409 duplicate rules as `POST /public/test/{slug}/create`.\n",
+        "x-veltrix-auth": "token_only",
+        "x-veltrix-section": "publicTest",
+        "x-veltrix-endpoint-id": "testCreateDirect",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.publicTest.testCreateDirect",
+        "x-veltrix-rate-limit": {
+          "key": "public_test_create",
+          "limit": 5,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Public Test",
+        "x-veltrix-guide-refs": [
+          "public-test-flow"
+        ],
+        "security": [
+          {
+            "PublicApiToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": "#/components/schemas/SlugParam"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "include_v2ray": {
+                    "type": "boolean"
+                  },
+                  "username": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]{3,32}$",
+                    "description": "Optional SSH login. Letter case is preserved. Empty or omitted keeps random generation."
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 64,
+                    "description": "Optional SSH password. Empty or omitted keeps random generation."
+                  },
+                  "account_username": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]{3,32}$"
+                  },
+                  "account_password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 64
+                  },
+                  "usuario": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]{3,32}$"
+                  },
+                  "senha": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 64
+                  }
+                }
+              },
+              "examples": {
+                "default": {
+                  "value": {
+                    "include_v2ray": true
+                  },
+                  "summary": "Random SSH credentials"
+                },
+                "customCredentials": {
+                  "value": {
+                    "include_v2ray": true,
+                    "username": "joao123",
+                    "password": "senha123"
+                  },
+                  "summary": "Custom SSH username and password"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Test credentials in JSON response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": true,
+                      "message": "Teste criado com sucesso",
+                      "data": {
+                        "delivery": "direct",
+                        "account_id": 501,
+                        "username": "abc12def",
+                        "password": "Xy9kLm2pQr",
+                        "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                        "v2ray_uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                        "ssh_enabled": 1,
+                        "v2ray_enabled": 1,
+                        "type": "combo",
+                        "expires_at": "2026-08-15T06:29:00+00:00",
+                        "validity_hours": 3,
+                        "renewal_link": "https://panel.example.com/renewal",
+                        "store_link": "https://panel.example.com/s/loja-demo"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "validation": {
+                    "value": {
+                      "success": false,
+                      "message": "account_id, plan_id e gateway_id são obrigatórios"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API token required",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "tokenRequired": {
+                    "value": {
+                      "success": false,
+                      "message": "Token de API pública obrigatório",
+                      "error_type": "public_api_token_required"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Custom username already taken or reserved by a pending payment",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope",
+                "examples": {
+                  "usernameTaken": {
+                    "value": {
+                      "success": false,
+                      "message": "Usuário já está em uso. Escolha outro."
+                    },
+                    "summary": "Username already taken"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-request-examples": {
+          "default": "examples/test-create-direct-request.json",
+          "customCredentials": "examples/test-create-direct-custom-credentials-request.json"
+        },
+        "x-veltrix-response-examples": {
+          "default": "examples/test-create-direct-response.json"
+        }
+      }
+    },
+    "/public/recovery/config": {
+      "get": {
+        "operationId": "recoveryGetConfig",
+        "tags": [
+          "credential-recovery"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "credentialRecovery",
+        "x-veltrix-endpoint-id": "recoveryConfig",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.credentialRecovery.recoveryConfig",
+        "x-veltrix-rate-limit": {
+          "key": "public_recovery_config",
+          "limit": 30,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Credential Recovery",
+        "responses": {
+          "200": {
+            "description": "Recovery page config",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/RecoveryConfigResponse",
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "enabled": true,
+                        "cooldown_hours": 24,
+                        "smtp_available": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-response-examples": {
+          "default": "examples/recovery-config-response.json"
+        }
+      }
+    },
+    "/public/recovery/credentials": {
+      "post": {
+        "operationId": "recoveryRequestCredentials",
+        "tags": [
+          "credential-recovery"
+        ],
+        "x-veltrix-auth": "session_or_token",
+        "x-veltrix-section": "credentialRecovery",
+        "x-veltrix-endpoint-id": "recoveryRequest",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.credentialRecovery.recoveryRequest",
+        "x-veltrix-rate-limit": {
+          "key": "public_recovery_request",
+          "limit": 5,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Credential Recovery",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                }
+              },
+              "examples": {
+                "default": {
+                  "value": {
+                    "email": "cliente@gmail.com"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Credentials emailed",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "default": {
+                    "value": {
+                      "success": true,
+                      "message": "Credenciais enviadas para o e-mail informado.",
+                      "data": {
+                        "delivery": "email",
+                        "email_masked": "c***@gmail.com",
+                        "accounts_count": 2
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-request-examples": {
+          "default": "examples/recovery-request.json"
+        },
+        "x-veltrix-response-examples": {
+          "default": "examples/recovery-response.json"
+        }
+      }
+    },
+    "/checkuser/dtunnel/{username}": {
+      "get": {
+        "operationId": "checkuserDtunnel",
+        "tags": [
+          "checkuser"
+        ],
+        "x-veltrix-auth": "unguarded",
+        "x-veltrix-section": "checkuser",
+        "x-veltrix-endpoint-id": "dtunnel",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.checkuser.dtunnel",
+        "x-veltrix-rate-limit": {
+          "key": "checkuser_dtunnel",
+          "limit": 60,
+          "window_seconds": 60
+        },
+        "x-veltrix-is-app-path": true,
+        "x-veltrix-postman-folder": "CheckUser",
+        "servers": [
+          {
+            "url": "/",
+            "description": "Panel root (not /api prefix)"
+          }
+        ],
+        "x-veltrix-query-examples": {
+          "deviceId": "abc123device"
+        },
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DTunnel checkuser response",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/CheckuserDtunnelResponse",
+                "examples": {
+                  "active": {
+                    "value": {
+                      "username": "usuario123",
+                      "count_connections": 1,
+                      "limit_connections": 2,
+                      "expiration_days": 15,
+                      "expiration_date": "2026-08-30T23:59:00Z",
+                      "expiration_hours": 360,
+                      "status": "active"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-response-examples": {
+          "active": "examples/checkuser-dtunnel-response.json"
+        }
+      }
+    },
+    "/checkuser/conecta4g": {
+      "post": {
+        "operationId": "checkuserConecta4g",
+        "tags": [
+          "checkuser"
+        ],
+        "x-veltrix-auth": "unguarded",
+        "x-veltrix-section": "checkuser",
+        "x-veltrix-endpoint-id": "conecta4g",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.checkuser.conecta4g",
+        "x-veltrix-rate-limit": {
+          "key": "checkuser_conecta4g",
+          "limit": 60,
+          "window_seconds": 60
+        },
+        "x-veltrix-is-app-path": true,
+        "x-veltrix-postman-folder": "CheckUser",
+        "servers": [
+          {
+            "url": "/",
+            "description": "Panel root (not /api prefix)"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": "#/components/schemas/CheckuserConecta4gRequest",
+              "examples": {
+                "default": {
+                  "value": {
+                    "user": "usuario123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Conecta4G checkuser response",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/CheckuserConecta4gResponse",
+                "examples": {
+                  "active": {
+                    "value": {
+                      "username": "usuario123",
+                      "count_connection": 0,
+                      "limiter_user": 2,
+                      "expiration_date": "2026-08-30T23:59:00Z",
+                      "expiration_days": 15,
+                      "expiration_hours": 360
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-veltrix-request-examples": {
+          "default": "examples/checkuser-conecta4g-request.json"
+        },
+        "x-veltrix-response-examples": {
+          "active": "examples/checkuser-conecta4g-response.json"
+        }
+      }
+    },
+    "/public/servers": {
+      "get": {
+        "operationId": "getServers",
+        "summary": "List servers and metrics",
+        "description": "Returns the list of servers available for the authenticated token/session user.\n- **Resellers (`reseller` / `sub_reseller`)**: Returns active servers belonging to the reseller's assigned category.\n- **Admins (`super_admin` / `admin`)**: Returns all servers along with real-time `/onlines` (online user counts) and `/system/resources` (CPU, Memory, Disk usage) metrics.\n",
+        "tags": [
+          "servers"
+        ],
+        "x-veltrix-auth": "token-or-session",
+        "x-veltrix-section": "servers",
+        "x-veltrix-endpoint-id": "getServers",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.servers.getServers",
+        "x-veltrix-rate-limit": {
+          "key": "public_servers_list",
+          "limit": 60,
+          "window_seconds": 60
+        },
+        "x-veltrix-postman-folder": "Servers",
+        "security": [
+          {
+            "PublicApiToken": []
+          },
+          {
+            "PublicSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category_id",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Optional category ID filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Server list response (scoped by role)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "role",
+                    "total",
+                    "servers"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "reseller",
+                        "admin"
+                      ]
+                    },
+                    "category_id": {
+                      "type": "integer",
+                      "nullable": true
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "servers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "resellerRole": {
+                    "value": {
+                      "success": true,
+                      "role": "reseller",
+                      "category_id": 1,
+                      "total": 2,
+                      "servers": [
+                        {
+                          "id": 1,
+                          "name": "Servidor Brasil 01",
+                          "category_id": 1,
+                          "category_name": "Premium BR",
+                          "type": "ssh",
+                          "status": "active",
+                          "flag": "br"
+                        },
+                        {
+                          "id": 2,
+                          "name": "Servidor USA 01",
+                          "category_id": 1,
+                          "category_name": "Premium BR",
+                          "type": "combo",
+                          "status": "active",
+                          "flag": "us"
+                        }
+                      ]
+                    },
+                    "summary": "Reseller scoped response"
+                  },
+                  "adminRole": {
+                    "value": {
+                      "success": true,
+                      "role": "admin",
+                      "total": 2,
+                      "servers": [
+                        {
+                          "id": 1,
+                          "name": "Servidor Brasil 01",
+                          "ip": "191.252.100.15",
+                          "category_id": 1,
+                          "category_name": "Premium BR",
+                          "type": "ssh",
+                          "status": "active",
+                          "flag": "br",
+                          "accounts_count": 48,
+                          "metrics": {
+                            "status": "online",
+                            "online": {
+                              "ssh": 32,
+                              "v2ray": 12,
+                              "proto": 0,
+                              "total": 44
+                            },
+                            "resources": {
+                              "cpu": {
+                                "usage_percent": 18.5
+                              },
+                              "memory": {
+                                "total": 8192,
+                                "used": 3412,
+                                "usage_percent": 41.6
+                              },
+                              "disk": {
+                                "total": 80,
+                                "used": 24,
+                                "usage_percent": 30
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "id": 2,
+                          "name": "Servidor USA 01",
+                          "ip": "104.238.180.20",
+                          "category_id": 2,
+                          "category_name": "VIP US",
+                          "type": "combo",
+                          "status": "active",
+                          "flag": "us",
+                          "accounts_count": 15,
+                          "metrics": {
+                            "status": "online",
+                            "online": {
+                              "ssh": 10,
+                              "v2ray": 5,
+                              "proto": 0,
+                              "total": 15
+                            },
+                            "resources": {
+                              "cpu": {
+                                "usage_percent": 8.2
+                              },
+                              "memory": {
+                                "total": 4096,
+                                "used": 1200,
+                                "usage_percent": 29.2
+                              },
+                              "disk": {
+                                "total": 40,
+                                "used": 10,
+                                "usage_percent": 25
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "summary": "Admin response with real-time metrics"
+                  }
+                }
+              }
+            }
+          },
+          "401": "#/components/responses/Unauthorized",
+          "403": "#/components/responses/Forbidden"
+        },
+        "x-veltrix-response-examples": {
+          "resellerRole": "examples/servers-reseller-response.json",
+          "adminRole": "examples/servers-admin-response.json"
+        }
+      }
+    },
+    "/public/server-install/{token}": {
+      "get": {
+        "operationId": "serveServerInstallScript",
+        "summary": "Download one-time server installation script",
+        "description": "Returns a Bash installer as `text/plain`. The short-lived, single-use token is generated by an authenticated admin when registering a command-mode server. Run the generated command on the target VPS as root. Do not share or publish the tokenized URL.\n",
+        "tags": [
+          "servers"
+        ],
+        "x-veltrix-auth": "unguarded",
+        "x-veltrix-section": "servers",
+        "x-veltrix-endpoint-id": "serverInstallScript",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.servers.serverInstallScript",
+        "x-veltrix-postman-folder": "Servers",
+        "x-veltrix-guide-refs": [
+          "server-installation"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Short-lived install token from the panel. Treat as a secret."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bash installer script",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "#!/usr/bin/env bash\nset -e\n# Generated for one server; includes a redacted one-time token.\n# Run only on the intended VPS as root.\n...\n"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/server-install-callback": {
+      "post": {
+        "operationId": "serverInstallCallback",
+        "summary": "Confirm command-mode server installation",
+        "description": "Called by the generated VPS installer after the Sentinel API starts. The one-time install token authenticates the callback and is consumed after a successful install. This route does not use `X-Public-Api-Token`.\n",
+        "tags": [
+          "servers"
+        ],
+        "x-veltrix-auth": "unguarded",
+        "x-veltrix-section": "servers",
+        "x-veltrix-endpoint-id": "serverInstallCallback",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.servers.serverInstallCallback",
+        "x-veltrix-postman-folder": "Servers",
+        "x-veltrix-guide-refs": [
+          "server-installation"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "description": "One-time token embedded in the generated installer."
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "success",
+                      "error"
+                    ],
+                    "default": "success"
+                  },
+                  "ip": {
+                    "type": "string",
+                    "description": "Detected public IPv4 address."
+                  },
+                  "api_port": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                  },
+                  "api_version": {
+                    "type": "string"
+                  }
+                }
+              },
+              "examples": {
+                "success": {
+                  "value": {
+                    "token": "install-token-from-generated-script",
+                    "status": "success",
+                    "ip": "203.0.113.18",
+                    "api_port": 7239,
+                    "api_version": "1.4.2"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Installation callback accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "message"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "server_id": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "examples": {
+                  "installed": {
+                    "value": {
+                      "success": true,
+                      "message": "Servidor instalado e vinculado com sucesso",
+                      "server_id": 42
+                    }
+                  },
+                  "installFailed": {
+                    "value": {
+                      "success": false,
+                      "message": "Instalação reportou falha"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing, invalid, or expired token",
+            "content": {
+              "application/json": {
+                "schema": "#/components/schemas/ApiErrorEnvelope"
+              }
+            }
+          }
+        },
+        "x-veltrix-request-examples": {
+          "success": "examples/server-install-callback-request.json"
+        },
+        "x-veltrix-response-examples": {
+          "installed": "examples/server-install-callback-response.json",
+          "installFailed": "examples/server-install-callback-error-response.json"
+        }
+      }
+    },
+    "/public/server-update.sh": {
+      "get": {
+        "operationId": "serveServerUpdateScript",
+        "summary": "Download manual Sentinel API update script",
+        "description": "Returns the manual Bash update script as `text/plain`. Use it on VPS servers registered with `command` or `shared` installation mode, which do not support panel-managed SSH updates. Execute the script as root on the target server.\n",
+        "tags": [
+          "servers"
+        ],
+        "x-veltrix-auth": "unguarded",
+        "x-veltrix-section": "servers",
+        "x-veltrix-endpoint-id": "serverUpdateScript",
+        "x-veltrix-i18n-key": "publicApiDocs.endpoints.servers.serverUpdateScript",
+        "x-veltrix-postman-folder": "Servers",
+        "x-veltrix-guide-refs": [
+          "server-installation"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Bash update script",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "#!/usr/bin/env bash\nset -e\n# Updates the Sentinel API to the latest compatible release.\nsystemctl restart VeltrixPanel.service\n"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

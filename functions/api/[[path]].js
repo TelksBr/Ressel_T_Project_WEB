@@ -5,7 +5,7 @@ function panelOriginFromRequest(url) {
   const hostname = url.hostname.replace(/^www\./, '');
 
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'https://painel.reselltproject.shop';
+    return 'https://painel.reselltproject.com.br';
   }
 
   const root = hostname.startsWith('painel.') ? hostname.slice('painel.'.length) : hostname;

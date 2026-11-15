@@ -3,14 +3,16 @@ import { veltrixConfig } from './config';
 import type {
   ApiError,
   AvailabilityResponse,
+  CouponValidationResponse,
   CreatePaymentPayload,
   CreateTestPayload,
   CreateTestResponse,
   PaymentGateway,
   PaymentMethod,
   PaymentMethodsResponse,
+  PaymentResult,
   PaymentStatusResponse,
-  PixPaymentData,
+  PaypalCaptureResponse,
   ResellerPlan,
   TestConfig,
 } from '../types/veltrix';
@@ -136,6 +138,10 @@ function slugPath(suffix: string) {
   return `/public/reseller-sales/${veltrixConfig.salesSlug}${suffix}`;
 }
 
+function salesSlugPath(suffix: string, customSlug?: string) {
+  return `/public/sales/${customSlug || veltrixConfig.salesSlug}${suffix}`;
+}
+
 function testSlugPath(suffix: string) {
   return `/public/test/${veltrixConfig.salesSlug}${suffix}`;
 }
@@ -201,41 +207,113 @@ function normalizePlans(data: unknown): ResellerPlan[] {
 
 function normalizePaymentMethod(
   raw: Record<string, unknown>,
+  gatewaysMap?: Map<number, PaymentGateway>,
 ): PaymentMethod | null {
-  const gateway = asRecord(raw.gateway);
-  const gatewayId = Number(raw.gateway_id ?? gateway.id ?? 0);
+  const rawGateway = asRecord(raw.gateway);
+  const gatewayId = Number(raw.gateway_id ?? rawGateway.id ?? 0);
   const methodId = firstString(raw.method_id);
   const genericType = firstString(raw.type);
-  const type = methodId || (genericType === 'instant' ? 'pix' : genericType);
+  const type = genericType || methodId || 'instant';
+  const resolvedMethodId = methodId || (type === 'instant' ? 'pix' : type);
 
-  if (!gatewayId || !type) return null;
+  if (!gatewayId && !raw.id) return null;
+
+  const matchedGateway =
+    (gatewaysMap ? gatewaysMap.get(gatewayId) : undefined) ??
+    (Object.keys(rawGateway).length
+      ? (rawGateway as unknown as PaymentGateway)
+      : undefined);
+
+  const provider = firstString(
+    raw.gateway_provider,
+    matchedGateway?.provider,
+  );
+
+  const rawInstallments =
+    raw.installments ??
+    raw.payer_costs ??
+    raw.parcelas ??
+    rawGateway.installments;
+
+  const installments = Array.isArray(rawInstallments)
+    ? rawInstallments
+        .map((inst) => {
+          const rec = asRecord(inst);
+          const count = Number(
+            rec.installments ?? rec.installment ?? rec.count ?? 1,
+          );
+          const amount = Number(
+            rec.installment_amount ?? rec.amount ?? rec.valor ?? 0,
+          );
+          const total = Number(rec.total_amount ?? rec.total ?? 0);
+          const rate = Number(
+            rec.installment_rate ?? rec.rate ?? rec.taxa ?? 0,
+          );
+          const message = firstString(
+            rec.recommended_message,
+            rec.message,
+            rec.descricao,
+          );
+          return {
+            installments: count,
+            installment_amount: amount,
+            total_amount: total,
+            installment_rate: rate,
+            recommended_message: message || undefined,
+          };
+        })
+        .filter((inst) => inst.installments > 0)
+    : undefined;
 
   return {
     id: Number(raw.id ?? gatewayId),
     gateway_id: gatewayId,
     type,
-    name: firstString(raw.name, type),
-    method_id: methodId || type,
-    selection_key: firstString(raw.selection_key) || `${gatewayId}:${type}`,
-    gateway: Object.keys(gateway).length
-      ? (gateway as PaymentGateway)
-      : undefined,
+    method_id: resolvedMethodId,
+    name: firstString(raw.name, resolvedMethodId),
+    description: firstString(raw.description) || undefined,
+    min_amount: raw.min_amount as number | string | undefined,
+    max_amount: raw.max_amount as number | string | undefined,
+    gateway_provider: provider || undefined,
+    selection_key:
+      firstString(raw.selection_key) || `${gatewayId}:${resolvedMethodId}`,
+    gateway: matchedGateway,
+    installments,
   };
 }
 
 function normalizePaymentMethods(data: unknown): PaymentMethodsResponse {
   const root = asRecord(data);
   const inner = asRecord(root.data);
+
+  const rawGateways = inner.gateways ?? root.gateways;
+  const gateways: PaymentGateway[] = Array.isArray(rawGateways)
+    ? rawGateways.map((g) => asRecord(g) as unknown as PaymentGateway)
+    : [];
+
+  const primaryGateway = (inner.gateway ?? root.gateway ?? gateways[0]) as
+    | PaymentGateway
+    | undefined;
+
+  const gatewaysMap = new Map<number, PaymentGateway>();
+  gateways.forEach((g) => {
+    if (g.id) gatewaysMap.set(g.id, g);
+  });
+  if (primaryGateway?.id && !gatewaysMap.has(primaryGateway.id)) {
+    gatewaysMap.set(primaryGateway.id, primaryGateway);
+  }
+
   const rawMethods =
     inner.methods ??
     inner.payment_methods ??
     root.methods ??
     root.payment_methods;
+
   const methods = Array.isArray(rawMethods)
     ? rawMethods
         .map((item) =>
           item && typeof item === 'object'
-            ? normalizePaymentMethod(asRecord(item))
+            ? normalizePaymentMethod(asRecord(item), gatewaysMap)
             : null,
         )
         .filter((method): method is PaymentMethod => method !== null)
@@ -243,22 +321,31 @@ function normalizePaymentMethods(data: unknown): PaymentMethodsResponse {
 
   return {
     methods,
-    gateway: (inner.gateway ?? root.gateway) as PaymentGateway | undefined,
+    gateways,
+    gateway: primaryGateway,
   };
 }
 
-function extractPixData(data: Record<string, unknown>): PixPaymentData {
+function extractPaymentResult(data: Record<string, unknown>): PaymentResult {
   const nested = asRecord(data.data);
   const payment = asRecord(data.payment);
   const source = { ...data, ...nested, ...payment };
+
   const pix = { ...asRecord(source.pix_data), ...asRecord(source.pix) };
+  const card = asRecord(source.card);
+  const ticket = asRecord(source.ticket);
+  const wallet = asRecord(source.wallet);
+  const paypal = asRecord(source.paypal);
 
   const paymentId = firstString(
     source.payment_id,
     source.id,
     nested.payment_id,
     payment.payment_id,
+    wallet.order_id,
+    paypal.order_id,
   );
+
   const copyPaste = firstString(
     pix.qr_code_text,
     pix.copy_paste,
@@ -268,16 +355,95 @@ function extractPixData(data: Record<string, unknown>): PixPaymentData {
     source.copy_paste,
     source.emv,
   );
+
   const qrBase64 = firstString(
     pix.qr_code_base64,
     pix.pix_qr_code_base64,
     source.qr_code_base64,
   );
 
+  const paymentUrl = firstString(
+    source.payment_url,
+    nested.payment_url,
+    ticket.payment_url,
+    wallet.checkout_url,
+    wallet.init_point,
+    wallet.sandbox_init_point,
+  );
+
   return {
+    success: source.success !== false,
     payment_id: paymentId,
-    order_id: firstString(source.order_id),
-    status: firstString(source.status) || 'pending',
+    order_id: firstString(source.order_id, nested.order_id),
+    status: firstString(source.status, nested.status) || 'pending',
+    payment_method: firstString(
+      source.payment_method,
+      nested.payment_method,
+      source.method_id,
+    ),
+    db_payment_id:
+      Number(source.db_payment_id ?? nested.db_payment_id) || undefined,
+    payment_url: paymentUrl || undefined,
+    message: firstString(source.message, nested.message) || undefined,
+
+    // Specific structures
+    pix:
+      qrBase64 || copyPaste
+        ? {
+            qr_code_base64: qrBase64 || undefined,
+            qr_code_text: copyPaste || undefined,
+            expires_at:
+              firstString(pix.expires_at, pix.expiration, source.expires_at) ||
+              undefined,
+          }
+        : undefined,
+
+    card:
+      Object.keys(card).length > 0
+        ? {
+            status: firstString(card.status, source.status) || undefined,
+            status_detail: firstString(card.status_detail) || undefined,
+          }
+        : undefined,
+
+    ticket:
+      Object.keys(ticket).length > 0 || ticket.payment_url
+        ? {
+            payment_url:
+              firstString(ticket.payment_url, paymentUrl) || undefined,
+            barcode: firstString(ticket.barcode) || undefined,
+            expires_at:
+              firstString(ticket.expires_at, ticket.expiration) || undefined,
+          }
+        : undefined,
+
+    wallet:
+      Object.keys(wallet).length > 0
+        ? {
+            preference_id: firstString(wallet.preference_id) || undefined,
+            init_point: firstString(wallet.init_point) || undefined,
+            sandbox_init_point:
+              firstString(wallet.sandbox_init_point) || undefined,
+            checkout_url:
+              firstString(
+                wallet.checkout_url,
+                wallet.init_point,
+                wallet.sandbox_init_point,
+              ) || undefined,
+            order_id: firstString(wallet.order_id) || undefined,
+          }
+        : undefined,
+
+    paypal:
+      Object.keys(paypal).length > 0
+        ? {
+            order_id: firstString(paypal.order_id, paymentId) || undefined,
+            client_id: firstString(paypal.client_id) || undefined,
+            environment: firstString(paypal.environment) || undefined,
+          }
+        : undefined,
+
+    // Backward-compatible fields
     pix_qr_code: firstString(pix.qr_code, pix.pix_qr_code, source.qr_code),
     pix_qr_code_base64: qrBase64,
     pix_copy_paste: copyPaste,
@@ -300,7 +466,7 @@ function extractCredentials(
 ): PaymentStatusResponse['account'] {
   const nested = asRecord(
     (data as unknown as { data?: unknown }).data,
-  ) as PaymentStatusResponse;
+  ) as unknown as PaymentStatusResponse;
   const account =
     data.account ??
     data.reseller ??
@@ -347,13 +513,48 @@ export const veltrixApi = {
     return data.available ?? false;
   },
 
-  async createPayment(payload: CreatePaymentPayload): Promise<PixPaymentData> {
+  async validateCoupon(
+    code: string,
+    planId: number,
+    amount: number,
+  ): Promise<CouponValidationResponse> {
+    return await request<CouponValidationResponse>(
+      slugPath('/coupons/validate'),
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: code.trim(),
+          plan_id: planId,
+          amount,
+        }),
+      },
+    );
+  },
+
+  async createPayment(payload: CreatePaymentPayload): Promise<PaymentResult> {
     const data = await request<Record<string, unknown>>(slugPath('/payment'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    return extractPixData(data);
+    return extractPaymentResult(data);
+  },
+
+  async capturePaypal(
+    paymentId: string,
+    paypalOrderId?: string,
+  ): Promise<PaypalCaptureResponse> {
+    return await request<PaypalCaptureResponse>(
+      `/public/payment/${encodeURIComponent(paymentId)}/paypal/capture`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          paypalOrderId ? { paypal_order_id: paypalOrderId } : {},
+        ),
+      },
+    );
   },
 
   async getPaymentStatus(paymentId: string): Promise<PaymentStatusResponse> {
@@ -363,7 +564,7 @@ export const veltrixApi = {
     const nested = asRecord(data.data);
     const payload = (
       nested.status ? { ...data, ...nested } : data
-    ) as PaymentStatusResponse;
+    ) as unknown as PaymentStatusResponse;
 
     return {
       ...payload,
@@ -376,6 +577,37 @@ export const veltrixApi = {
     await request(`/public/payment/${encodeURIComponent(paymentId)}/cancel`, {
       method: 'POST',
     });
+  },
+
+  async getAccountPlans(customSlug?: string): Promise<ResellerPlan[]> {
+    const data = await request<unknown>(salesSlugPath('/plans', customSlug));
+    return normalizePlans(data);
+  },
+
+  async getAccountPaymentMethods(
+    customSlug?: string,
+    amount?: number,
+  ): Promise<PaymentMethodsResponse> {
+    const query = amount ? `?amount=${amount}` : '';
+    const data = await request<PaymentMethodsResponse>(
+      salesSlugPath(`/payment-methods${query}`, customSlug),
+    );
+    return normalizePaymentMethods(data);
+  },
+
+  async createAccountPayment(
+    payload: CreatePaymentPayload,
+    customSlug?: string,
+  ): Promise<PaymentResult> {
+    const data = await request<Record<string, unknown>>(
+      salesSlugPath('/payment', customSlug),
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      },
+    );
+    return extractPaymentResult(data);
   },
 
   async getTestConfig(): Promise<TestConfig> {

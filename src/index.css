@@ -5,11 +5,13 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    color-scheme: dark;
   }
 
   body {
     @apply bg-surface text-gray-100 antialiased;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    color-scheme: dark;
   }
 
   ::selection {
@@ -162,6 +164,18 @@
 
   .input-field {
     @apply w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-base text-white placeholder-gray-500 outline-none transition sm:text-sm;
+  }
+
+  select.input-field {
+    color-scheme: dark;
+    background-color: #12101c;
+    color: #ffffff;
+  }
+
+  select.input-field option {
+    background-color: #12101c;
+    color: #ffffff;
+    padding: 10px 14px;
   }
 
   .input-field:focus {

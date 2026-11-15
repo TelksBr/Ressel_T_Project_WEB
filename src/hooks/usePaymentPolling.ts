@@ -57,7 +57,17 @@ export function usePaymentPolling({
         setProvisioning(Boolean(result.provisioning));
 
         if (result.status === 'approved') {
-          if (result.provisioning) return;
+          if (result.provisioning) {
+            attemptsRef.current += 1;
+            if (attemptsRef.current >= maxAttempts) {
+              setError(
+                t('Tempo esgotado aguardando provisionamento da conta.'),
+              );
+              return;
+            }
+            setTimeout(poll, intervalMs);
+            return;
+          }
 
           setCredentials(result.account);
           callbacksRef.current.onApproved?.(result.account);
